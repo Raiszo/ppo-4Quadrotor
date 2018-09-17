@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def build_mlp(n_layers, input_placeholder, output_size):
+def build_mlp(n_layers, input_placeholder, output_size, size=64):
     y = input_placeholder
     for i in range(n_layers):
         y = tf.layers.dense(y, size, activation=tf.tanh, use_bias=True)
@@ -13,20 +13,9 @@ class Policy:
         activation = tf.tanh
         
         with tf.variable_scope(name):
-            
-            with tf.variable_scope('vf'):
-                y = self.state
-                for i in range(n_layers):
-                    y = tf.layers.dense(y, 64, activation=activation, use_bias=True)
 
-                self.vpred = tf.layers.dense(y, 1, use_bias=True)
-
-            with tf.variable_scope('pol'):
-                y = self.state
-                for i in range(n_layers):
-                    y = tf.layers.dense(y, 64, activation=activation, use_bias=True)
-
-                self.action = tf.layers.dense(y, action_dim, use_bias=True)
+            self.vpred = build_mlp(2, self.state, 1)
+            self.action = build_mlp(2, self.state, action_dim)
 
     def act(self, sess, obs):
         ac, v = sess.run([self.action, self.vpred], feed_dict={self.state: obs[None]})
