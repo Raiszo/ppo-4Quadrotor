@@ -11,18 +11,15 @@ def main():
     ac_dim = env.action_space.shape[0]
     
     pi = Policy('veronika', obs_ph, ac_dim, 2)
-    # generator = rollouts_generator(pi, env, 2048)
+    
 
     # gen = generator.__next__()
-
-    
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        obs = env.reset()
-
-        for i in range(10):
-            ac, v = pi.act(sess, obs)
-            obs, rew, done, _ = env.step(ac)
+        
+        generator = rollouts_generator(sess, pi, env, 2048)
+        gen = generator.__next__()
+        print(gen["ob"].shape)
 
 if __name__ == '__main__':
     main()

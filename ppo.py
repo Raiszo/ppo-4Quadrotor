@@ -5,7 +5,7 @@ from policy import build_mlp as mlp
 
 
 # def rollouts_generator(pi, env, horizon):
-def rollouts_generator(pi, env, horizon):
+def rollouts_generator(sess, pi, env, horizon):
     """
     Generator function
     This function will continue generating
@@ -32,7 +32,7 @@ def rollouts_generator(pi, env, horizon):
     while True:
         # prevac = ac
         # ac, vpred = pi.act(ob)
-        ac, vpred = pi.act()
+        ac, vpred = pi.act(sess, ob)
 
         if t > 0 and t % horizon == 0:
             yield { "ob": obs, "ac": acs, "rew": rews, "new": news,
