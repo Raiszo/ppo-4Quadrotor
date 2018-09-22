@@ -10,15 +10,17 @@ def build_mlp(n_layers, input_placeholder, output_size, size=64):
 class Policy:
     def __init__(self, name, state_placeholder, action_dim, n_layers, continuos=True):
         self.state = state_placeholder
+        self.std = tf.constant(0.2)
         activation = tf.tanh
         
         with tf.variable_scope(name):
 
             self.vpred = build_mlp(2, self.state, 1)
             self.action = build_mlp(2, self.state, action_dim)
+            self.sample_action = tf.random_normal([None], self.action, self.std)
 
     def act(self, sess, obs):
-        ac, v = sess.run([self.action, self.vpred], feed_dict={self.state: obs[None]})
+        ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
         return ac[0], v[0]
 
 class Random_policy:

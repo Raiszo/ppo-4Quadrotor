@@ -11,17 +11,18 @@ def main():
     ac_dim = env.action_space.shape[0]
     
     gamma, lam = 0.99, 0.95
+    std = 0.2
 
     ob_no = tf.placeholder(tf.float32, shape=[None, env.observation_space.shape[0]])
     ac_na = tf.placeholder(tf.float32, shape=[None, env.action_space.shape[0]])
     adv_n = tf.placeholder(tf.float32, shape=[None])
     
     pi = Policy('veronika', ob_no, ac_dim, n_layers=2)
+
     
     # Sampling operation
     sy_mean = pi.action
-    sy_sampled_ac = tf.random_normal([None], sy_mean, 0.2, dtype=tf.float32)
-    sy_logprob_n = 
+    sy_logprob_n = (ob_no - sy_mean) / std**2
 
     # gen = generator.__next__()
     with tf.Session() as sess:
