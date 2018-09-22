@@ -21,7 +21,6 @@ class Policy:
         ac, v = sess.run([self.action, self.vpred], feed_dict={self.state: obs[None]})
         return ac[0], v[0]
 
-
 class Random_policy:
     def __init__(self, env):
         self.action = env.action_space.sample
