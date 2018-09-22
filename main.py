@@ -11,7 +11,7 @@ def main():
     ac_dim = env.action_space.shape[0]
     
     gamma, lam = 0.99, 0.95
-    std = 0.2
+    std = 0.1
     learning_rate = 0.05
 
     # Sampled variables
@@ -59,6 +59,7 @@ def main():
 
             _loss, _ = sess.run([loss, update_op], feed_dict=feed_dict)
 
+            print(seg["rew"].sum())
             print(_loss)
 
         
