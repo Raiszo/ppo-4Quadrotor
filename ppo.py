@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import tensorflow as tf
-from policy import build_mlp as mlp
 
 
 # def rollouts_generator(pi, env, horizon):
@@ -79,3 +78,15 @@ def add_vtarg_adv(seg, lam, gamma):
         gae_adv[t] = last_gae = delta + gamma*lam*last_gae
 
         td_v[t] = is_terminal * gamma * vpred[t+1] + seg["rew"][t]
+
+def multi_normal(sy_means, std):
+    # sy_means should be of shape [None, env.action_space.shape[0]]
+    # so, the for loop will be evaluated correctly
+    num_normals = sy_means.get_shape().as_list()[1]
+    tensors = []
+    for i in range(num_normals):
+        tensors.append(tf.random_normal(tf.shape(sy_means)))
+    
+    samples = tf.concat(tensors, 1)
+
+    return samples * std + sy_means

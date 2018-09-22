@@ -1,4 +1,5 @@
 import tensorflow as tf
+from ppo import multi_normal
 
 def build_mlp(n_layers, input_placeholder, output_size, size=64):
     y = input_placeholder
@@ -8,7 +9,7 @@ def build_mlp(n_layers, input_placeholder, output_size, size=64):
     return tf.layers.dense(y, output_size, use_bias=True)
 
 class Policy:
-    def __init__(self, name, state_placeholder, action_dim, n_layers, continuos=True):
+    def __init__(self, name, state_placeholder, action_dim, n_layers, std=0.5, continuos=True):
         self.state = state_placeholder
         self.std = tf.constant(0.2)
         activation = tf.tanh
@@ -17,7 +18,8 @@ class Policy:
 
             self.vpred = build_mlp(2, self.state, 1)
             self.action = build_mlp(2, self.state, action_dim)
-            self.sample_action = tf.random_normal([None], self.action, self.std)
+            # use the batch_size as the size of values sampled from the normal distribution
+            self.sample_action = multi_normal(self.action, std)
 
     def act(self, sess, obs):
         ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
