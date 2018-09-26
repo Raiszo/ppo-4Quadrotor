@@ -1,4 +1,5 @@
 import tensorflow as tf
+from ppo import multi_normal
 
 def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
     y = input_placeholder
@@ -8,18 +9,22 @@ def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
     return tf.layers.dense(y, output_size, use_bias=True)
 
 class Policy:
-    def __init__(self, name, state_placeholder, action_dim, n_layers, sigma=0.5, continuous=True):
+    def __init__(self, name, state_placeholder, action_dim, continuous, n_layers, sigma=0.5):
         self.state = state_placeholder
         self.std = tf.constant(0.2)
         activation = tf.tanh
         
         with tf.variable_scope(name):
 
-            self.vpred = build_mlp(2, self.state, 1, scope='value')
-            self.mu = build_mlp(2, self.state, action_dim, scope='policy')
+            self.vpred = build_mlp(n_layers, self.state, 1, scope='value')
+            self.logits = build_mlp(n_layers, self.state, action_dim, scope='policy')
             # use the batch_size as the size of values sampled from the normal distribution
-            self.sample_action = multi_normal(self.mu, sigma) if continuous else tf.multinominal()
 
+            self.sample_action = multi_normal(self.logits, sigma) \
+                if continuous \
+                   else tf.multinomial(self.logits - tf.reduce_max(self.logits, 1, keepdims=True), 1)
+
+            
     def act(self, sess, obs):
         ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
         return ac[0], v[0]

@@ -7,33 +7,43 @@ import tensorflow as tf
 tf.set_random_seed(0)
 
 def main():
-    env = gym.make('Pendulum-v0')
-    ac_dim = env.action_space.shape[0]
+    # env = gym.make('Pendulum-v0')
+    env = gym.make('CartPole-v1')
+    
+    continuous = isinstance(env.action_space, gym.spaces.Box)
+    ob_dim = env.observation_space.shape[0]
+    ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
+
     
     gamma, lam = 0.99, 0.95
     std = 0.1
     learning_rate = 0.05
 
     # Sampled variables
-    ob_no = tf.placeholder(tf.float32, shape=[None, env.observation_space.shape[0]])
-    ac_na = tf.placeholder(tf.float32, shape=[None, env.action_space.shape[0]])
+    ob_no = tf.placeholder(tf.float32, shape=[None, ob_dim])
+    ac_na = tf.placeholder(tf.float32, shape=[None, ac_dim])
     adv_n = tf.placeholder(tf.float32, shape=[None])
     val_n = tf.placeholder(tf.float32, shape=[None])
 
     # Target Value function
     t_val = tf.placeholder(tf.float32, shape=[None])
-    
-    pi = Policy('veronika', ob_no, ac_dim, n_layers=2)
+
+    print(ac_dim)
+    pi = Policy('veronika', ob_no, ac_dim, continuous, n_layers=2)
 
     
     # Gaussian policy loss operations
-    mean_na = pi.action
-    logprob_n = (ac_na - mean_na) / std**2
-    pg_loss = tf.reduce_mean(logprob_n)
+    # mean_na = pi.action
+    # logprob_n = (ac_na - mean_na) / std**2
+    # pg_loss = tf.reduce_mean(logprob_n)
+
+    with tf.variable_scope('pg_loss'):
+        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits))
 
     # Value function loss operations
-    b_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n))
-    
+    with tf.variable_scope('value_loss'): 
+        b_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n))
+
 
     loss = pg_loss + b_loss
     update_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)

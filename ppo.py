@@ -90,3 +90,6 @@ def multi_normal(sy_means, std):
     samples = tf.concat(tensors, 1)
 
     return samples * std + sy_means
+
+def multinomial(sy_logits):
+    return 
