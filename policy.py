@@ -1,7 +1,6 @@
 import tensorflow as tf
-from ppo import multi_normal
 
-def build_mlp(n_layers, input_placeholder, output_size, size=64):
+def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
     y = input_placeholder
     for i in range(n_layers):
         y = tf.layers.dense(y, size, activation=tf.tanh, use_bias=True)
@@ -9,17 +8,17 @@ def build_mlp(n_layers, input_placeholder, output_size, size=64):
     return tf.layers.dense(y, output_size, use_bias=True)
 
 class Policy:
-    def __init__(self, name, state_placeholder, action_dim, n_layers, std=0.5, continuos=True):
+    def __init__(self, name, state_placeholder, action_dim, n_layers, sigma=0.5, continuous=True):
         self.state = state_placeholder
         self.std = tf.constant(0.2)
         activation = tf.tanh
         
         with tf.variable_scope(name):
 
-            self.vpred = build_mlp(2, self.state, 1)
-            self.action = build_mlp(2, self.state, action_dim)
+            self.vpred = build_mlp(2, self.state, 1, scope='value')
+            self.mu = build_mlp(2, self.state, action_dim, scope='policy')
             # use the batch_size as the size of values sampled from the normal distribution
-            self.sample_action = multi_normal(self.action, std)
+            self.sample_action = multi_normal(self.mu, sigma) if continuous else tf.multinominal()
 
     def act(self, sess, obs):
         ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
