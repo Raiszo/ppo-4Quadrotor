@@ -45,7 +45,7 @@ def rollouts_generator(sess, pi, env, horizon):
                     # "ep_rets" : ep_rets, "ep_lens" : ep_lens }
         
         i = t % horizon
-        
+
         obs[i] = ob
         acs[i] = ac
         vpreds[i] = vpred
@@ -64,6 +64,17 @@ def rollouts_generator(sess, pi, env, horizon):
 
         t += 1
 
+def render(sess, pi, env):
+    ob = env.reset()
+    done = False
+
+    while not done:
+        env.render()
+        ac, v = pi.act(sess, ob)
+
+        ob, rew, done, _ = env.step(ac)
+        
+        
 def add_vtarg_adv(seg, lam, gamma):
     T = len(seg["ob"])
     seg["adv"] = gae_adv = np.empty(T, 'float32')
@@ -90,6 +101,3 @@ def multi_normal(sy_means, std):
     samples = tf.concat(tensors, 1)
 
     return samples * std + sy_means
-
-def multinomial(sy_logits):
-    return 

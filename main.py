@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from ppo import rollouts_generator, add_vtarg_adv
+from ppo import rollouts_generator, add_vtarg_adv, render
 from policy import Policy
 import tensorflow as tf
 
@@ -20,15 +20,17 @@ def main():
     learning_rate = 0.05
 
     # Sampled variables
-    ob_no = tf.placeholder(tf.float32, shape=[None, ob_dim])
-    ac_na = tf.placeholder(tf.float32, shape=[None, ac_dim])
-    adv_n = tf.placeholder(tf.float32, shape=[None])
-    val_n = tf.placeholder(tf.float32, shape=[None])
+    ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
+    ac_na = tf.placeholder(shape=[None, ac_dim], name="actions", dtype=tf.float32) \
+        if continuous else \
+           tf.placeholder(shape=[None], name="actions", dtype=tf.int32)
+    adv_n = tf.placeholder(shape=[None], dtype=tf.float32)
+    val_n = tf.placeholder(shape=[None], dtype=tf.float32)
 
     # Target Value function
-    t_val = tf.placeholder(tf.float32, shape=[None])
+    t_val = tf.placeholder(shape=[None], dtype=tf.float32)
 
-    print(ac_dim)
+    # print(ac_dim)
     pi = Policy('veronika', ob_no, ac_dim, continuous, n_layers=2)
 
     
@@ -37,17 +39,21 @@ def main():
     # logprob_n = (ac_na - mean_na) / std**2
     # pg_loss = tf.reduce_mean(logprob_n)
 
-    with tf.variable_scope('pg_loss'):
-        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits))
-
-    # Value function loss operations
-    with tf.variable_scope('value_loss'): 
-        b_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n))
-
-
-    loss = pg_loss + b_loss
-    update_op = tf.train.AdamOptimizer(learning_rate).minimize(loss)
-
+    with tf.variable_scope('losses'):
+        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
+        # Value function loss operations
+        v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
+        loss = pg_loss + v_loss
+    
+    
+    gradient_clip = 40
+    optimizer = tf.train.AdamOptimizer(learning_rate)
+    grads = tf.gradients(loss, tf.trainable_variables())
+    grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
+    grads_and_vars = list(zip(grads, tf.trainable_variables()))
+    train_op = optimizer.apply_gradients(grads_and_vars)
+    
+    
     init = tf.global_variables_initializer()
     # gen = generator.__next__()
     with tf.Session() as sess:
@@ -67,11 +73,9 @@ def main():
                 t_val: seg["vtarg"]
             }
 
-            _loss, _ = sess.run([loss, update_op], feed_dict=feed_dict)
+            _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
 
-            print(seg["rew"].sum())
-            print(_loss)
-
+        render(sess, pi, env)
         
 
 if __name__ == '__main__':
