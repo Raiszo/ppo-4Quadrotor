@@ -38,9 +38,13 @@ def main():
     # mean_na = pi.action
     # logprob_n = (ac_na - mean_na) / std**2
     # pg_loss = tf.reduce_mean(logprob_n)
+    
+    [mean_adv, var_adv] = tf.nn.moments(adv_n, axes=[0])
+    std_adv = tf.sqrt(var_adv)
+    norm_adv_n = (adv_n - mean_adv) / (std_adv + 1e-8)
 
     with tf.variable_scope('losses'):
-        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
+        pg_loss = tf.reduce_mean(norm_adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
         # Value function loss operations
         v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
         loss = pg_loss + v_loss
