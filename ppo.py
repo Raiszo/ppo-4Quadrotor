@@ -14,9 +14,9 @@ def rollouts_generator(sess, pi, env, horizon):
     ac = env.action_space.sample()
     ob = env.reset()
 
-    # cur_ep_ret = 0 # return in current episode
+    cur_ep_ret = 0 # return in current episode
     # cur_ep_len = 0 # len of current episode
-    # ep_rets = [] # returns of completed episodes in this segment
+    ep_rets = [] # returns of completed episodes in this segment
     # ep_lens = [] # lengths of ...
     
     new = True
@@ -41,8 +41,8 @@ def rollouts_generator(sess, pi, env, horizon):
         """
         if t > 0 and t % horizon == 0:
             yield { "ob": obs, "ac": acs, "rew": rews, "new": news,
-                    "vpred": vpreds, "next_vpred": vpred*(1-new) }
-                    # "ep_rets" : ep_rets, "ep_lens" : ep_lens }
+                    "vpred": vpreds, "next_vpred": vpred*(1-new),
+                    "ep_rets" : ep_rets }
         
         i = t % horizon
 
@@ -54,11 +54,12 @@ def rollouts_generator(sess, pi, env, horizon):
         ob, rew, new, _ = env.step(ac)
 
         rews[i] = rew
+        cur_ep_ret += rew
 
         if new:
-            # ep_rets.append(cur_ep_ret)
+            ep_rets.append(cur_ep_ret)
             # ep_lens.append(cur_ep_len)
-            # cur_ep_ret = 0
+            cur_ep_ret = 0
             # cur_ep_len = 0
             ob = env.reset()
 

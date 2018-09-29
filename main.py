@@ -17,7 +17,7 @@ def main():
     
     gamma, lam = 0.99, 0.95
     std = 0.1
-    learning_rate = 0.05
+    learning_rate = 5e-3
 
     # Sampled variables
     ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
@@ -39,12 +39,8 @@ def main():
     # logprob_n = (ac_na - mean_na) / std**2
     # pg_loss = tf.reduce_mean(logprob_n)
     
-    [mean_adv, var_adv] = tf.nn.moments(adv_n, axes=[0])
-    std_adv = tf.sqrt(var_adv)
-    norm_adv_n = (adv_n - mean_adv) / (std_adv + 1e-8)
-
     with tf.variable_scope('losses'):
-        pg_loss = tf.reduce_mean(norm_adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
+        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
         # Value function loss operations
         v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
         loss = pg_loss + v_loss
@@ -69,15 +65,18 @@ def main():
             seg = generator.__next__()
             add_vtarg_adv(seg, lam, gamma)
 
+            adv = seg["adv"]
+            adv = (adv - adv.mean()) / (adv.std() + 1e-8)
             feed_dict = {
                 ob_no: seg["ob"],
                 ac_na: seg["ac"],
-                adv_n: seg["adv"],
+                adv_n: adv,
                 val_n: seg["vpred"],
                 t_val: seg["vtarg"]
             }
 
             _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+            print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
 
         render(sess, pi, env)
         
