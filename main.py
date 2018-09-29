@@ -40,7 +40,8 @@ def main():
     # pg_loss = tf.reduce_mean(logprob_n)
     
     with tf.variable_scope('losses'):
-        pg_loss = tf.reduce_mean(adv_n * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits), name='pg_loss')
+        log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits)
+        pg_loss = tf.reduce_mean(adv_n * log_prob, name='pg_loss')
         # Value function loss operations
         v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
         loss = pg_loss + v_loss

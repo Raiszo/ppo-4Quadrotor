@@ -1,7 +1,7 @@
 import tensorflow as tf
 from ppo import multi_normal
 
-def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
+def build_mlp(n_layers, input_placeholder, output_size, scope, trainable=True, size=64):
     y = input_placeholder
     for i in range(n_layers):
         y = tf.layers.dense(y, size, activation=tf.tanh, use_bias=True)
@@ -18,7 +18,8 @@ class Policy:
         with tf.variable_scope(name):
 
             self.vpred = build_mlp(n_layers, self.state, 1, scope='value')
-            self.logits = build_mlp(n_layers, self.state, action_dim, scope='policy')
+            self.logits = build_mlp(n_layers, self.state, action_dim, scope='policy', trainable=True)
+            self.old_logits = build_mlp(n_layers, self.state, action_dim, scope='policy', trainable=False)
             # use the batch_size as the size of values sampled from the normal distribution
 
             self.sample_action = multi_normal(self.logits, sigma) \
