@@ -69,15 +69,19 @@ def render(sess, pi, env):
     ob = env.reset()
     done = False
 
+    total_rew = 0
     while not done:
         env.render()
         ac, v = pi.act(sess, ob)
 
         ob, rew, done, _ = env.step(ac)
-        
+        total_rew += rew
+
+    print('Total reward at testig', total_rew)
         
 def add_vtarg_adv(seg, lam, gamma):
     T = len(seg["ob"])
+    new = np.append(seg["new"], 0)
     seg["adv"] = gae_adv = np.empty(T, 'float32')
     seg["vtarg"] = td_v = np.empty(T, 'float32')
     
@@ -85,9 +89,10 @@ def add_vtarg_adv(seg, lam, gamma):
 
     last_gae = 0
     for t in reversed(range(T)):
-        is_terminal = 1-seg["new"][t]
+        # check this, when is_terminal = 1-new[t], everything crushes like crazy
+        is_terminal = 1-new[t+1]
         delta = - vpred[t] + (is_terminal * gamma * vpred[t+1] + seg["rew"][t])
-        gae_adv[t] = last_gae = delta + gamma*lam*last_gae
+        gae_adv[t] = last_gae = delta + gamma*lam*last_gae*is_terminal
 
         td_v[t] = is_terminal * gamma * vpred[t+1] + seg["rew"][t]
 

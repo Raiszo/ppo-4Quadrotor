@@ -59,7 +59,7 @@ def main():
     with tf.Session() as sess:
         sess.run(init)
         
-        generator = rollouts_generator(sess, pi, env, 202)
+        generator = rollouts_generator(sess, pi, env, 1024)
 
         for _ in range(100):
             seg = generator.__next__()
@@ -76,6 +76,7 @@ def main():
             }
 
             _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+            # print(_loss)
             print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
 
         render(sess, pi, env)
