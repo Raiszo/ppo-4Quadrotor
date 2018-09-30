@@ -33,6 +33,7 @@ def rollouts_generator(sess, pi, env, horizon):
         # ac, vpred = pi.act(ob)
         ac, vpred = pi.act(sess, ob)
 
+        print(ac)
         """
         Need next_vpred if the batch ends in the middle of an episode, then we need to append
         that value to vpreds to calculate the target Value using TD => V = r + gamma*V_{t+1}

@@ -85,9 +85,9 @@ def main():
     with tf.Session() as sess:
         sess.run(init)
         
-        generator = rollouts_generator(sess, pi, env, 1024)
+        generator = rollouts_generator(sess, pi, env, 5)
 
-        for _ in range(100):
+        for _ in range(2):
             seg = generator.__next__()
             add_vtarg_adv(seg, lam, gamma)
 
@@ -103,10 +103,13 @@ def main():
 
             for _ in range(5):
                 _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
-            # print(_loss)
-            print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
 
-        render(sess, pi, env)
+            pi.save_policy(sess)
+            # print(_loss)
+            print(seg["ep_rets"])
+            # print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
+
+        # render(sess, pi, env)
         
 
 if __name__ == '__main__':
