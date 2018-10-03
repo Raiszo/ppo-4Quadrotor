@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 from ppo import rollouts_generator, add_vtarg_adv, render
-from policy import Policy
+from agent import Agent
 import tensorflow as tf
 
 tf.set_random_seed(0)
@@ -9,11 +9,11 @@ tf.set_random_seed(0)
 def main():
     # env = gym.make('Pendulum-v0')
     env = gym.make('CartPole-v1')
-    
+
     continuous = isinstance(env.action_space, gym.spaces.Box)
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
-
+        
     
     gamma, lam = 0.99, 0.95
     std = 0.1
@@ -32,7 +32,7 @@ def main():
     t_val = tf.placeholder(shape=[None], dtype=tf.float32)
 
     # print(ac_dim)
-    pi = Policy('veronika', ob_no, ac_dim, continuous, n_layers=2)
+    rla = Agent('veronika', ob_no, ac_dim, continuous, n_layers=2)
 
     
     # Gaussian policy loss operations
@@ -49,11 +49,11 @@ def main():
     
     # This only may work for the discrete case
     # probabilities of actions which agent took with policy
-    act_probs = pi.logits * tf.one_hot(indices=ac_na, depth=ac_dim)
+    act_probs = rla.pi.logits * tf.one_hot(indices=ac_na, depth=ac_dim)
     act_probs = tf.reduce_sum(act_probs, axis=1)
 
     # probabilities of actions which agent took with old policy
-    act_probs_old = pi.old_logits * tf.one_hot(indices=ac_na, depth=ac_dim)
+    act_probs_old = rla.old_pi.logits * tf.one_hot(indices=ac_na, depth=ac_dim)
     act_probs_old = tf.reduce_sum(act_probs_old, axis=1)
     
     with tf.variable_scope('loss/surrogate'):
@@ -73,10 +73,10 @@ def main():
     
     gradient_clip = 40
     optimizer = tf.train.AdamOptimizer(learning_rate)
-    grads = tf.gradients(loss, pi.policy_vars)
+    grads = tf.gradients(loss, rla.pi_vars)
     # print(pi.policy_vars)
     grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
-    grads_and_vars = list(zip(grads, pi.policy_vars))
+    grads_and_vars = list(zip(grads, rla.pi_vars))
     train_op = optimizer.apply_gradients(grads_and_vars)
     
     
@@ -85,7 +85,7 @@ def main():
     with tf.Session() as sess:
         sess.run(init)
         
-        generator = rollouts_generator(sess, pi, env, 5)
+        generator = rollouts_generator(sess, rla, env, 5)
 
         for _ in range(2):
             seg = generator.__next__()
@@ -104,7 +104,7 @@ def main():
             for _ in range(5):
                 _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
 
-            pi.save_policy(sess)
+            rla.save_policy(sess)
             # print(_loss)
             print(seg["ep_rets"])
             # print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))

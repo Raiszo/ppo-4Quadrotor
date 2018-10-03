@@ -3,8 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 
-# def rollouts_generator(pi, env, horizon):
-def rollouts_generator(sess, pi, env, horizon):
+def rollouts_generator(sess, agent, env, horizon):
     """
     Generator function
     This function will continue generating
@@ -31,7 +30,7 @@ def rollouts_generator(sess, pi, env, horizon):
     while True:
         # prevac = ac
         # ac, vpred = pi.act(ob)
-        ac, vpred = pi.act(sess, ob)
+        ac, vpred = agent.act(sess, ob)
 
         print(ac)
         """
@@ -66,14 +65,14 @@ def rollouts_generator(sess, pi, env, horizon):
 
         t += 1
 
-def render(sess, pi, env):
+def render(sess, agent, env):
     ob = env.reset()
     done = False
 
     total_rew = 0
     while not done:
         env.render()
-        ac, v = pi.act(sess, ob)
+        ac, v = agent.act(sess, ob)
 
         ob, rew, done, _ = env.step(ac)
         total_rew += rew
