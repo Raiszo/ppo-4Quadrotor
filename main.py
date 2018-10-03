@@ -105,7 +105,7 @@ def main():
                 _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
 
             rla.save_policy(sess)
-            # print(_loss)
+            print(_loss)
             print(seg["ep_rets"])
             # print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
 
