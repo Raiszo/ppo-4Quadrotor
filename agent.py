@@ -2,18 +2,6 @@ import tensorflow as tf
 from network import Network
 from ppo import multi_normal
 
-def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
-    with tf.variable_scope(scope):
-        y = input_placeholder
-        for i in range(n_layers):
-            y = tf.layers.dense(y, size, activation=tf.tanh, use_bias=True)     
-
-    output = tf.layers.dense(y, output_size, use_bias=True)
-    var_names = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, tf.get_variable_scope().name)
-    
-    return output, var_names
-
-
 class Agent:
     def __init__(self, name, state_placeholder, action_dim, continuous, n_layers, std=0.5):
         self.continuous = continuous
