@@ -16,7 +16,7 @@ class Agent:
         self.pi_vars = self.pi.get_vars()
         self.old_pi_vars = self.old_pi.get_vars()
 
-        self.sample_action = multi_normal(self.pi.logits, sigma) \
+        self.sample_action = multi_normal(self.pi.logits, self.std) \
                 if continuous \
                    else tf.multinomial(self.pi.logits - tf.reduce_max(self.pi.logits, axis=1, keepdims=True), 1)
         self.vpred = self.v_func.logits

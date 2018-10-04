@@ -6,6 +6,8 @@ import tensorflow as tf
 
 tf.set_random_seed(0)
 
+two_pi = np.sqrt(0.5 / np.pi)
+
 def main():
     # env = gym.make('Pendulum-v0')
     env = gym.make('CartPole-v1')
@@ -48,9 +50,9 @@ def main():
     #     # Value function loss operations
     #     v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
     #     loss = pg_loss + v_loss
+
     
     # This only may work for the discrete case
-
     # Could avoid doing these ops just by using a tf.nn.softmax activation in the last layer
     pi_probs = rla.pi.logits - tf.reduce_max(rla.pi.logits)
     pi_probs = tf.nn.softmax(pi_probs)
@@ -81,15 +83,15 @@ def main():
         loss = - surrogate + v_loss
         
     
-    # gradient_clip = 40
-    # optimizer = tf.train.AdamOptimizer(learning_rate)
-    # grads = tf.gradients(loss, rla.pi_vars)
-    # grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
-    # grads_and_vars = list(zip(grads, rla.pi_vars))
-    # train_op = optimizer.apply_gradients(grads_and_vars)
-
+    gradient_clip = 40
     optimizer = tf.train.AdamOptimizer(learning_rate)
-    train_op = optimizer.minimize(loss, var_list=rla.pi_vars)
+    grads = tf.gradients(loss, rla.pi_vars)
+    grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
+    grads_and_vars = list(zip(grads, rla.pi_vars))
+    train_op = optimizer.apply_gradients(grads_and_vars)
+
+    # optimizer = tf.train.AdamOptimizer(learning_rate)
+    # train_op = optimizer.minimize(loss, var_list=rla.pi_vars)
     
     
     init = tf.global_variables_initializer()
