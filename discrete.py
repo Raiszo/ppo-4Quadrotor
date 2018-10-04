@@ -21,8 +21,9 @@ def main():
     std = 0.1
     learning_rate = 5e-3
     epsilon = 0.2
-    epochs = 10
-    num_ite = 50
+    epochs = 1
+    num_ite = 1
+    sample_size = 5
 
     # Sampled variables
     ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
@@ -86,6 +87,7 @@ def main():
     gradient_clip = 40
     optimizer = tf.train.AdamOptimizer(learning_rate)
     grads = tf.gradients(loss, rla.pi_vars)
+    print(rla.pi_vars)
     grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
     grads_and_vars = list(zip(grads, rla.pi_vars))
     train_op = optimizer.apply_gradients(grads_and_vars)
@@ -99,7 +101,7 @@ def main():
     with tf.Session() as sess:
         sess.run(init)
         
-        generator = rollouts_generator(sess, rla, env, 2048)
+        generator = rollouts_generator(sess, rla, env, sample_size)
 
         # From the beginning, the old policy is equal to the current policy
         rla.save_policy(sess)
