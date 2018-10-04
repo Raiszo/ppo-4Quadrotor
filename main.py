@@ -19,6 +19,8 @@ def main():
     std = 0.1
     learning_rate = 5e-3
     epsilon = 0.2
+    epochs = 10
+    num_ite = 50
 
     # Sampled variables
     ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
@@ -36,48 +38,58 @@ def main():
 
     
     # Gaussian policy loss operations
-    # mean_na = pi.action
+    # mean_na = rla.pi.logits
     # logprob_n = (ac_na - mean_na) / std**2
     # pg_loss = tf.reduce_mean(logprob_n)
     
     # with tf.variable_scope('losses'):
-    #     log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=pi.logits)
+    #     log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=ac_na, logits=rla.pi.logits)
     #     pg_loss = tf.reduce_mean(adv_n * log_prob, name='pg_loss')
     #     # Value function loss operations
     #     v_loss = tf.reduce_mean(tf.losses.mean_squared_error(labels=t_val, predictions=val_n), name='v_loss')
     #     loss = pg_loss + v_loss
     
     # This only may work for the discrete case
-    # probabilities of actions which agent took with policy
-    act_probs = rla.pi.logits * tf.one_hot(indices=ac_na, depth=ac_dim)
-    act_probs = tf.reduce_sum(act_probs, axis=1)
 
+    # Could avoid doing these ops just by using a tf.nn.softmax activation in the last layer
+    pi_probs = rla.pi.logits - tf.reduce_max(rla.pi.logits)
+    pi_probs = tf.nn.softmax(pi_probs)
+    pi_probs_old = rla.old_pi.logits - tf.reduce_max(rla.old_pi.logits)
+    pi_probs_old = tf.nn.softmax(pi_probs_old)
+    
+    # probabilities of actions which agent took with policy
+    act_probs = pi_probs * tf.one_hot(indices=ac_na, depth=ac_dim)
+    act_probs = tf.reduce_sum(act_probs, axis=1)
     # probabilities of actions which agent took with old policy
-    act_probs_old = rla.old_pi.logits * tf.one_hot(indices=ac_na, depth=ac_dim)
+    act_probs_old = pi_probs_old * tf.one_hot(indices=ac_na, depth=ac_dim)
     act_probs_old = tf.reduce_sum(act_probs_old, axis=1)
     
     with tf.variable_scope('loss/surrogate'):
         ratio = tf.exp(tf.log(act_probs) - tf.log(act_probs_old))
+        # ratio = tf.divide(act_probs, act_probs_old)
+        # ratio = tf.exp(act_probs - act_probs_old)
         clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
         
         surrogate = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
-        surrogate = - tf.reduce_mean(surrogate)
+        surrogate = tf.reduce_mean(surrogate)
         
     with tf.variable_scope('loss/value_f'):
         v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=val_n)
         v_loss = tf.reduce_mean(v_loss)
 
     with tf.variable_scope('loss'):
-        loss = surrogate + v_loss
+        loss = - surrogate + v_loss
         
     
-    gradient_clip = 40
+    # gradient_clip = 40
+    # optimizer = tf.train.AdamOptimizer(learning_rate)
+    # grads = tf.gradients(loss, rla.pi_vars)
+    # grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
+    # grads_and_vars = list(zip(grads, rla.pi_vars))
+    # train_op = optimizer.apply_gradients(grads_and_vars)
+
     optimizer = tf.train.AdamOptimizer(learning_rate)
-    grads = tf.gradients(loss, rla.pi_vars)
-    # print(pi.policy_vars)
-    grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
-    grads_and_vars = list(zip(grads, rla.pi_vars))
-    train_op = optimizer.apply_gradients(grads_and_vars)
+    train_op = optimizer.minimize(loss, var_list=rla.pi_vars)
     
     
     init = tf.global_variables_initializer()
@@ -85,9 +97,11 @@ def main():
     with tf.Session() as sess:
         sess.run(init)
         
-        generator = rollouts_generator(sess, rla, env, 5)
+        generator = rollouts_generator(sess, rla, env, 2048)
 
-        for _ in range(2):
+        # From the beginning, the old policy is equal to the current policy
+        rla.save_policy(sess)
+        for i in range(num_ite):
             seg = generator.__next__()
             add_vtarg_adv(seg, lam, gamma)
 
@@ -101,15 +115,26 @@ def main():
                 t_val: seg["vtarg"]
             }
 
-            for _ in range(5):
+            total_loss = 0
+            for _ in range(epochs):
                 _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+                total_loss += _loss
+                # _stuff = sess.run([ac_na, pi_probs, act_probs, ratio, loss, train_op], feed_dict=feed_dict)
 
+            # print(_stuff[0])
+            # print(_stuff[1])
+            # print(_stuff[2])
+            # print(_stuff[3])
             rla.save_policy(sess)
-            print(_loss)
-            print(seg["ep_rets"])
-            # print(sum(seg["ep_rets"]) / len(seg["ep_rets"]))
+            returns = np.array(seg["ep_rets"])
 
-        # render(sess, pi, env)
+            if i % 5 == 0 or i == num_ite:
+                print(total_loss / epochs)
+                print(returns.mean(), returns.std())
+            # _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+
+
+        render(sess, rla, env)
         
 
 if __name__ == '__main__':
