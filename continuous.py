@@ -21,9 +21,12 @@ def main():
     std = 0.3
     learning_rate = 5e-3
     epsilon = 0.2
-    epochs = 10
-    num_ite = 50
-    sample_size = 2048
+    epochs = 1
+    num_ite = 1
+    sample_size = 7
+    # epochs = 10
+    # num_ite = 50
+    # sample_size = 2048
 
     # Sampled variables
     with tf.variable_scope('placeholders'):
@@ -41,22 +44,25 @@ def main():
 
     
     # Continuous case:
-    act_probs = vero.dist.log_prob(ac_na)
-    old_act_probs = vero.old_dist.log_prob(ac_na)
+    log_probs = vero.dist.log_prob(ac_na)
+    log_probs = tf.squeeze(log_probs, axis=1)
+    old_log_probs = vero.old_dist.log_prob(ac_na)
+    old_log_probs = tf.squeeze(old_log_probs, axis=1)
     
     with tf.variable_scope('loss/surrogate'):
-        ratio = tf.exp(act_probs - old_act_probs)
+        act_probs = tf.exp(log_probs)
+        ratio = tf.exp(log_probs - old_log_probs)
         clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
-        
-        surrogate = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
-        surrogate = tf.reduce_mean(surrogate)
+
+        surrogate_min = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
+        surrogate = tf.reduce_mean(surrogate_min)
         
     with tf.variable_scope('loss/value_f'):
         v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=val_n)
         v_loss = tf.reduce_mean(v_loss)
 
     with tf.variable_scope('loss'):
-        loss = - surrogate + v_loss
+        loss = - surrogate + 0.5*v_loss
         
     
     gradient_clip = 40
@@ -67,7 +73,7 @@ def main():
     train_op = optimizer.apply_gradients(grads_and_vars)
 
     # optimizer = tf.train.AdamOptimizer(learning_rate)
-    # train_op = optimizer.minimize(loss, var_list=vero.pi_vars)
+    # train_op = optimizer.minimize(loss, var_list=vero.vars)
     
     
     init = tf.global_variables_initializer()
@@ -93,26 +99,30 @@ def main():
                 t_val: seg["vtarg"]
             }
 
+            print(seg["rew"])
+
             total_loss = 0
             for _ in range(epochs):
-                _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
-                total_loss += _loss
-                # _stuff = sess.run([ac_na, pi_probs, act_probs, ratio, loss, train_op], feed_dict=feed_dict)
+                # _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+                _stuff = sess.run([adv_n, ac_na, ratio, clipped_ratio, act_probs, surrogate_min,  surrogate, v_loss, loss, train_op], feed_dict=feed_dict)
+                # total_loss += _loss
 
-            # print(_stuff[0])
-            # print(_stuff[1])
-            # print(_stuff[2])
-            # print(_stuff[3])
+                print(_stuff[0])
+                print(_stuff[1])
+                print(_stuff[2])
+                print(_stuff[3])
+                print(_stuff[4])
+                print(_stuff[5])
+                print(_stuff[6])
             vero.save_policy(sess)
-            returns = np.array(seg["ep_rets"])
+            # rewards = np.array(seg["ep_rets"])
 
-            if i % 5 == 0 or i == num_ite:
-                print(total_loss / epochs)
-                print(returns.mean(), returns.std())
-            # _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+            # if i % 5 == 0 or i == num_ite:
+            #     print(total_loss / epochs)
+            #     print(rewards.mean(), rewards.std())
 
 
-        render(sess, vero, env)
+        # render(sess, vero, env)
         
 
 if __name__ == '__main__':
