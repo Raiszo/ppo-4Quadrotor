@@ -17,7 +17,6 @@ class Agent:
             pi_scope = tf.get_variable_scope().name
             pi_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, pi_scope)
 
-        self.vars = pi_vars
             
         with tf.variable_scope('old_policy'):
             self.old_pi = build_mlp(2, state_placeholder, action_dim)
@@ -29,10 +28,12 @@ class Agent:
             old_pi_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, old_pi_scope)
 
         with tf.variable_scope('value'):
-            self.vpred = build_mlp(1, state_placeholder, action_dim)
-            # vpred_vars = tf.get_variable_scope().name
+            vpred = build_mlp(2, state_placeholder, 1)
+            self.vpred = tf.squeeze(vpred, axis=1)
+            vpred_scope = tf.get_variable_scope().name
+            vpred_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, vpred_scope)
         
-        self.sample_action = self.dist.sample(1) \
+        self.sample_action = self.dist.sample() \
                 if continuous \
                    else tf.multinomial(self.pi - tf.reduce_max(self.pi, axis=1, keepdims=True), 1)
 
@@ -41,11 +42,14 @@ class Agent:
             for v_old, v in zip(old_pi_vars, pi_vars):
                 self.assign_ops.append(tf.assign(v_old, v))
 
-        
+        # print(pi_vars, vpred_vars)
+        self.vars = pi_vars + vpred_vars
+        # print(self.vars)
+
         
     def act(self, sess, obs):
         ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
-        return(ac[0][0], v[0][0]) if self.continuous else (ac[0][0], v[0][0])
+        return(ac[0], v[0]) if self.continuous else (ac[0][0], v[0][0])
 
     def save_policy(self, sess):
         return sess.run(self.assign_ops)
