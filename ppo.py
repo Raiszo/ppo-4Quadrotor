@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def rollouts_generator(sess, agent, env, horizon):
+def rollouts_generator(sess, agent, env, horizon, ep_len=None):
     """
     Generator function
     This function will continue generating
@@ -14,9 +14,9 @@ def rollouts_generator(sess, agent, env, horizon):
     ob = env.reset()
 
     cur_ep_ret = 0 # return in current episode
-    # cur_ep_len = 0 # len of current episode
+    cur_ep_len = 0 # len of current episode
     ep_rets = [] # returns of completed episodes in this segment
-    # ep_lens = [] # lengths of ...
+    ep_lens = [] # lengths of ...
     
     new = True
 
@@ -41,7 +41,7 @@ def rollouts_generator(sess, agent, env, horizon):
         if t > 0 and t % horizon == 0:
             yield { "ob": obs, "ac": acs, "rew": rews, "new": news,
                     "vpred": vpreds, "next_vpred": vpred*(1-new),
-                    "ep_rets" : ep_rets }
+                    "ep_rets" : ep_rets, "ep_lens" : ep_lens }
         
         i = t % horizon
 
@@ -54,12 +54,13 @@ def rollouts_generator(sess, agent, env, horizon):
 
         rews[i] = rew
         cur_ep_ret += rew
+        cur_ep_len += 1
 
-        if new:
+        if new or (ep_len and i > ep_len):
             ep_rets.append(cur_ep_ret)
-            # ep_lens.append(cur_ep_len)
+            ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
-            # cur_ep_len = 0
+            cur_ep_len = 0
             ob = env.reset()
 
         t += 1
