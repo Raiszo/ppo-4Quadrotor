@@ -1,4 +1,4 @@
-import gym
+import gym, math
 import numpy as np
 from ppo import rollouts_generator, add_vtarg_adv, render
 from agent import Agent
@@ -21,6 +21,7 @@ def main():
     gamma, lam = 0.9, 0.95
     learning_rate = 5e-3
     epsilon = 0.2
+    batch_size = 64
     # epochs = 1
     # num_ite = 1
     # sample_size = 2048
@@ -46,21 +47,21 @@ def main():
     # Continuous case:
     # log_probs = vero.dist.log_prob(ac_na)
     # log_probs = tf.squeeze(log_probs, axis=1)
-    probs = vero.dist.prob(ac_na)
+    log_probs = vero.dist.log_prob(ac_na)
     # probs = tf.squeeze(probs, axis=1)
     # old_log_probs = vero.old_dist.log_prob(ac_na)
     # old_log_probs = tf.squeeze(old_log_probs, axis=1)
-    old_probs = vero.old_dist.prob(ac_na)
+    old_log_probs = vero.old_dist.log_prob(ac_na)
     # old_probs = tf.squeeze(old_probs, axis=1)
     
     with tf.variable_scope('loss/surrogate'):
-        # ratio = tf.exp(log_probs - old_log_probs)
-        ratio = probs / (old_probs + 1e-8)
+        ratio = tf.exp(log_probs - old_log_probs)
         clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
 
-        surrogate_min = tf.minimum(ratio, clipped_ratio)
-        surrogate_mean = tf.reduce_mean(surrogate_min)
-        surrogate = tf.reduce_mean(surrogate_min*adv_n)
+        surrogate_min = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
+        # surrogate_mean = tf.reduce_mean(surrogate_min)
+        # surrogate = tf.reduce_mean(surrogate_min*adv_n)
+        surrogate = tf.reduce_mean(surrogate_min)
         
     with tf.variable_scope('loss/value_f'):
         v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=vero.vpred)
@@ -91,7 +92,7 @@ def main():
         
         generator = rollouts_generator(sess, vero, env, sample_size)
 
-        for i in range(num_ite):
+        for j in range(num_ite):
             seg = generator.__next__()
             # From the beginning, the old policy is equal to the current policy
             vero.save_policy(sess)
@@ -101,28 +102,37 @@ def main():
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
             
-            feed_dict = {
-                ob_no: seg["ob"],
-                ac_na: seg["ac"],
-                adv_n: adv,
-                val_n: seg["vpred"],
-                t_val: seg["vtarg"]
-            }
+            
             # if np.isnan(ac_na).any():
             #     print('fuck my life')
+            _obs = seg["ob"]
+            train_indicies = np.arange(_obs.shape[0])
 
+
+                
+                
             total_loss = 0
             for _ in range(epochs):
-                # _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
-                _stuff = sess.run([surrogate_mean, v_loss, loss, train_op], feed_dict=feed_dict)
-                total_loss += _stuff[0]
+                for i in range(int(math.ceil(_obs.shape[0]/batch_size))):
+                    start_idx = (i*batch_size)%_obs.shape[0]
+                    idx = train_indicies[start_idx:start_idx+batch_size]
 
-                # print(_stuff[0], _stuff[1], _stuff[2])
+                    feed_dict = {
+                        ob_no: seg["ob"][idx, :],
+                        ac_na: seg["ac"][idx, :],
+                        adv_n: adv[idx],
+                        val_n: seg["vpred"][idx],
+                        t_val: seg["vtarg"][idx]
+                    }
+                    actual_batch_size = _obs[idx].shape[0]
+
+                    _stuff = sess.run([loss, train_op], feed_dict=feed_dict)
+
             
             rewards = np.array(seg["ep_rets"])
             actions = np.array(seg["ac"])
 
-            if i % 5 == 0 or i == num_ite:
+            if j % 5 == 0 or j == num_ite:
                 print(total_loss / epochs)
                 print(rewards.mean(), rewards.std())
                 print(actions.mean(), actions.std())
