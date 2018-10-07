@@ -9,6 +9,7 @@ tf.set_random_seed(0)
 two_pi = np.sqrt(0.5 / np.pi)
 
 def main():
+    # env = gym.make('MountainCarContinuous-v0')
     env = gym.make('Pendulum-v0')
     # env = gym.make('CartPole-v1')
 
@@ -17,16 +18,15 @@ def main():
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
         
     
-    gamma, lam = 0.99, 0.95
-    std = 0.3
+    gamma, lam = 0.9, 0.95
     learning_rate = 5e-3
     epsilon = 0.2
-    epochs = 1
-    num_ite = 1
-    sample_size = 7
-    # epochs = 10
-    # num_ite = 50
+    # epochs = 1
+    # num_ite = 1
     # sample_size = 2048
+    epochs = 10
+    num_ite = 50
+    sample_size = 2048
 
     # Sampled variables
     with tf.variable_scope('placeholders'):
@@ -44,25 +44,34 @@ def main():
 
     
     # Continuous case:
-    log_probs = vero.dist.log_prob(ac_na)
-    log_probs = tf.squeeze(log_probs, axis=1)
-    old_log_probs = vero.old_dist.log_prob(ac_na)
-    old_log_probs = tf.squeeze(old_log_probs, axis=1)
+    # log_probs = vero.dist.log_prob(ac_na)
+    # log_probs = tf.squeeze(log_probs, axis=1)
+    probs = vero.dist.prob(ac_na)
+    # probs = tf.squeeze(probs, axis=1)
+    # old_log_probs = vero.old_dist.log_prob(ac_na)
+    # old_log_probs = tf.squeeze(old_log_probs, axis=1)
+    old_probs = vero.old_dist.prob(ac_na)
+    # old_probs = tf.squeeze(old_probs, axis=1)
     
     with tf.variable_scope('loss/surrogate'):
-        act_probs = tf.exp(log_probs)
-        ratio = tf.exp(log_probs - old_log_probs)
+        # ratio = tf.exp(log_probs - old_log_probs)
+        ratio = probs / (old_probs + 1e-8)
         clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
 
-        surrogate_min = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
-        surrogate = tf.reduce_mean(surrogate_min)
+        surrogate_min = tf.minimum(ratio, clipped_ratio)
+        surrogate_mean = tf.reduce_mean(surrogate_min)
+        surrogate = tf.reduce_mean(surrogate_min*adv_n)
         
     with tf.variable_scope('loss/value_f'):
-        v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=val_n)
+        v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=vero.vpred)
         v_loss = tf.reduce_mean(v_loss)
 
-    with tf.variable_scope('loss'):
-        loss = - surrogate + 0.5*v_loss
+    with tf.variable_scope('loss/entropy'):
+        ent_loss = tf.reduce_mean(vero.dist.entropy())
+
+        
+    loss = - surrogate + 0.5*v_loss - 0.01*ent_loss
+    # loss = - surrogate + 0.5*v_loss
         
     
     gradient_clip = 40
@@ -74,8 +83,7 @@ def main():
 
     # optimizer = tf.train.AdamOptimizer(learning_rate)
     # train_op = optimizer.minimize(loss, var_list=vero.vars)
-    
-    
+
     init = tf.global_variables_initializer()
     # gen = generator.__next__()
     with tf.Session() as sess:
@@ -83,14 +91,16 @@ def main():
         
         generator = rollouts_generator(sess, vero, env, sample_size)
 
-        # From the beginning, the old policy is equal to the current policy
-        vero.save_policy(sess)
         for i in range(num_ite):
             seg = generator.__next__()
+            # From the beginning, the old policy is equal to the current policy
+            vero.save_policy(sess)
             add_vtarg_adv(seg, lam, gamma)
 
             adv = seg["adv"]
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+
+            
             feed_dict = {
                 ob_no: seg["ob"],
                 ac_na: seg["ac"],
@@ -98,31 +108,27 @@ def main():
                 val_n: seg["vpred"],
                 t_val: seg["vtarg"]
             }
-
-            print(seg["rew"])
+            # if np.isnan(ac_na).any():
+            #     print('fuck my life')
 
             total_loss = 0
             for _ in range(epochs):
                 # _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
-                _stuff = sess.run([adv_n, ac_na, ratio, clipped_ratio, act_probs, surrogate_min,  surrogate, v_loss, loss, train_op], feed_dict=feed_dict)
-                # total_loss += _loss
+                _stuff = sess.run([surrogate_mean, v_loss, loss, train_op], feed_dict=feed_dict)
+                total_loss += _stuff[0]
 
-                print(_stuff[0])
-                print(_stuff[1])
-                print(_stuff[2])
-                print(_stuff[3])
-                print(_stuff[4])
-                print(_stuff[5])
-                print(_stuff[6])
-            vero.save_policy(sess)
-            # rewards = np.array(seg["ep_rets"])
+                # print(_stuff[0], _stuff[1], _stuff[2])
+            
+            rewards = np.array(seg["ep_rets"])
+            actions = np.array(seg["ac"])
 
-            # if i % 5 == 0 or i == num_ite:
-            #     print(total_loss / epochs)
-            #     print(rewards.mean(), rewards.std())
+            if i % 5 == 0 or i == num_ite:
+                print(total_loss / epochs)
+                print(rewards.mean(), rewards.std())
+                print(actions.mean(), actions.std())
 
 
-        # render(sess, vero, env)
+        render(sess, vero, env)
         
 
 if __name__ == '__main__':
