@@ -26,7 +26,7 @@ def main():
     # num_ite = 1
     # sample_size = 2048
     epochs = 10
-    num_ite = 50
+    num_ite = 600
     sample_size = 2048
 
     # Sampled variables
@@ -108,9 +108,6 @@ def main():
             _obs = seg["ob"]
             train_indicies = np.arange(_obs.shape[0])
 
-
-                
-                
             total_loss = 0
             for _ in range(epochs):
                 for i in range(int(math.ceil(_obs.shape[0]/batch_size))):
@@ -126,9 +123,10 @@ def main():
                     }
                     actual_batch_size = _obs[idx].shape[0]
 
-                    _stuff = sess.run([loss, train_op], feed_dict=feed_dict)
+                    _loss, _ = sess.run([loss, train_op], feed_dict=feed_dict)
+                    total_loss += _loss
 
-            
+
             rewards = np.array(seg["ep_rets"])
             actions = np.array(seg["ac"])
 

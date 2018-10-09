@@ -2,6 +2,21 @@ import tensorflow as tf
 from network import build_mlp
 from ppo import multi_normal
 
+def dist_continuous(logits):
+    logstd = tf.get_variable(name='logstd', shape=[1, action_dim],
+                             initializer=tf.zeros_initializer())
+    std = tf.zeros_like(logits) + tf.exp(logstd)
+    dist = tf.distributions.Normal(loc=logits, scale=std)
+
+    return dist, (logstd)
+
+def dist_discrete(logits):
+    dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
+
+def dist_discrete(logits):
+    dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
+    
+
 class Agent:
     def __init__(self, state_placeholder, action_dim, continuous, n_layers):
         self.continuous = continuous
