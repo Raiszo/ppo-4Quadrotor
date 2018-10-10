@@ -1,21 +1,28 @@
 import tensorflow as tf
 from network import build_mlp
-from ppo import multi_normal
 
 def dist_continuous(logits):
-    logstd = tf.get_variable(name='logstd', shape=[1, action_dim],
+    logstd = tf.get_variable(name='logstd', shape=[1, logits.get_shape()[1]],
                              initializer=tf.zeros_initializer())
     std = tf.zeros_like(logits) + tf.exp(logstd)
     dist = tf.distributions.Normal(loc=logits, scale=std)
 
-    return dist, (logstd)
+    return dist, dist.sample(), [logstd]
 
 def dist_discrete(logits):
     dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
 
-def dist_discrete(logits):
-    dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
-    
+    sample = dist.sample()
+    sample = tf.argmax(sample, axis=1)
+
+    return dist, sample, []
+
+def get_dist(logits, continuous, scope):
+    with tf.variable_scope(scope):
+        dist = dist_continuous(logits) if continuous else dist_discrete(logits)
+
+    return dist
+
 
 class Agent:
     def __init__(self, state_placeholder, action_dim, continuous, n_layers):
@@ -23,43 +30,29 @@ class Agent:
         self.state = state_placeholder
 
 
-        with tf.variable_scope('policy'):
-            self.pi = build_mlp(2, state_placeholder, action_dim)
-            logstd = tf.get_variable(name='logstd', shape=[1, action_dim],
-                                     initializer=tf.zeros_initializer())
-            self.std = tf.zeros_like(self.pi) + tf.exp(logstd)
-            self.dist = tf.distributions.Normal(loc=self.pi, scale=self.std)
-            pi_scope = tf.get_variable_scope().name
-            pi_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, pi_scope)
+        pi       = build_mlp(2, state_placeholder, action_dim, 'policy')
+        old_pi   = build_mlp(2, state_placeholder, action_dim, 'old_policy')
+        vpred    = build_mlp(2, state_placeholder, 1, 'vale_pred')
 
-            
-        with tf.variable_scope('old_policy'):
-            self.old_pi = build_mlp(2, state_placeholder, action_dim)
-            old_logstd = tf.get_variable(name='logstd', shape=[1, action_dim],
-                                         initializer=tf.zeros_initializer())
-            self.old_std = tf.zeros_like(self.old_pi) + tf.exp(old_logstd)
-            self.old_dist = tf.distributions.Normal(loc=self.old_pi, scale=self.old_std)
-            old_pi_scope = tf.get_variable_scope().name
-            old_pi_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, old_pi_scope)
+        dist     = get_dist(pi[0], continuous, 'dist')
+        old_dist = get_dist(old_pi[0], continuous, 'old_dist')
 
-        with tf.variable_scope('value'):
-            vpred = build_mlp(2, state_placeholder, 1)
-            self.vpred = tf.squeeze(vpred, axis=1)
-            vpred_scope = tf.get_variable_scope().name
-            vpred_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, vpred_scope)
+        self.pi = pi[0]
+        self.old_pi = old_pi[0]
+        self.vpred = tf.squeeze(vpred[0], axis=1)
         
-        self.sample_action = self.dist.sample() \
-                if continuous \
-                   else tf.multinomial(self.pi - tf.reduce_max(self.pi, axis=1, keepdims=True), 1)
+        self.dist = dist[0]
+        self.old_dist = old_dist[0]
+        self.sample_action = dist[1]
+        
+
+        self.tvars = pi[1] + vpred[1] + dist[2]
+
 
         with tf.variable_scope('assign_op'):
             self.assign_ops = []
-            for v_old, v in zip(old_pi_vars, pi_vars):
+            for v_old, v in zip(old_pi[1], pi[1]):
                 self.assign_ops.append(tf.assign(v_old, v))
-
-        # print(pi_vars, vpred_vars)
-        self.vars = pi_vars + vpred_vars
-        # print(self.vars)
 
         
     def act(self, sess, obs):
@@ -69,10 +62,10 @@ class Agent:
     def save_policy(self, sess):
         return sess.run(self.assign_ops)
 
-class Random_policy:
-    def __init__(self, env):
-        self.action = env.action_space.sample
+# class Random_policy:
+#     def __init__(self, env):
+#         self.action = env.action_space.sample
 
-    def act(self):
-        return self.action(), np.random.randn()
+#     def act(self):
+#         return self.action(), np.random.randn()
 

@@ -9,7 +9,7 @@ def build_mlp(n_layers, input_placeholder, output_size, scope, size=64):
 
         y = tf.layers.dense(y, output_size, use_bias=True)
 
-        scope = tf.get_variable_scope().name
-        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, pi_scope)
+        scope_name = tf.get_variable_scope().name
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope_name)
 
     return y, variables

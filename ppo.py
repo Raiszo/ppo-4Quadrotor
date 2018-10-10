@@ -1,4 +1,5 @@
 import os
+from math import ceil
 import numpy as np
 import tensorflow as tf
 
@@ -96,14 +97,71 @@ def add_vtarg_adv(seg, lam, gamma):
 
         td_v[t] = is_terminal * gamma * vpred[t+1] + seg["rew"][t]
 
-def multi_normal(sy_means, std):
-    # sy_means should be of shape [None, env.action_space.shape[0]]
-    # so, the for loop will be evaluated correctly
-    num_normals = sy_means.get_shape().as_list()[1]
-    tensors = []
-    for i in range(num_normals):
-        tensors.append(tf.random_normal(tf.shape(sy_means)))
-    
-    samples = tf.concat(tensors, 1)
 
-    return samples * std + sy_means
+class Sensei():
+    def __init__(self, agent, continuous, ob_dim, ac_dim,
+                 num_epochs, batch_size,
+                 learning_rate, epsilon=0.2):
+
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.agent = agent
+        
+        # Sampled variables
+        with tf.variable_scope('placeholders'):
+            self.ob_no = ob_no = self.agent.state
+            ac_args = {
+                "shape": [None, ac_dim] if continuous else [None],
+                "name": 'actions',
+                "dtype": tf.float32 if continuous else tf.int32
+            }
+            self.ac_na = ac_na = tf.placeholder(**ac_args)
+            self.adv_n = adv_n = tf.placeholder(shape=[None], name='advantages', dtype=tf.float32)
+            self.t_val = t_val = tf.placeholder(shape=[None], name='target_value', dtype=tf.float32)
+
+        log_probs = agent.dist.log_prob(ac_na)
+        old_log_probs = agent.old_dist.log_prob(ac_na)
+
+        with tf.variable_scope('loss/surrogate'):
+            ratio = tf.exp(log_probs - old_log_probs)
+            clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
+
+            surrogate_min = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
+            self.surrogate = tf.reduce_mean(surrogate_min)
+
+        with tf.variable_scope('loss/value_f'):
+            v_loss = tf.losses.mean_squared_error(labels=t_val, predictions=agent.vpred)
+            self.v_loss = tf.reduce_mean(v_loss)
+
+        with tf.variable_scope('loss/entropy'):
+            self.ent_loss = tf.reduce_mean(agent.dist.entropy())
+
+        self.loss = - self.surrogate + 0.5*self.v_loss - 0.01*self.ent_loss
+
+        gradient_clip = 40
+        optimizer = tf.train.AdamOptimizer(learning_rate)
+        grads = tf.gradients(self.loss, agent.tvars)
+        grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
+        grads_and_vars = list(zip(grads, agent.tvars))
+        self.train_op = optimizer.apply_gradients(grads_and_vars)
+
+    def train_samples(self, sess, obs, acs, advs, val):
+        batch_size = self.batch_size
+        size = obs.shape[0]
+        train_indicies = np.arange(size)
+        
+        for _ in range(self.num_epochs):
+            for i in range(int(ceil(size/batch_size))):
+                start_idx = (i*batch_size)%size
+                idx = train_indicies[start_idx:start_idx+batch_size]
+
+                feed_dict = {
+                    self.ac_na: acs[idx, :],
+                    self.ob_no: obs[idx, :],
+                    self.adv_n: advs[idx],
+                    self.t_val: val[idx]
+                }
+
+                _loss, _ = sess.run([self.loss, self.train_op], feed_dict)
+
+        
