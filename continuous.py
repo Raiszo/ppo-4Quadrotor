@@ -19,7 +19,7 @@ def main():
 
     num_iterations = 600
     sample_horizon = 2048
-    gamma, lam = 0.99, 0.95
+    gamma, lam = 0.9, 0.95
 
     ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
     vero = Agent(ob_no, ac_dim, continuous, n_layers=2)
@@ -45,10 +45,11 @@ def main():
 
             regina.train_samples(sess, seg["ob"], seg["ac"], adv, seg["vtarg"])
 
-            rewards = np.array(seg["rew"])
+            rewards = np.array(seg["ep_rets"])
 
-            if i % 10 or i == num_iterations:
-                print(rewards.mean(), rewards.std())
+            if i % 10 or i == num_iterations-1:
+                print('Iteration {0}: with average rewards {1:.3g} and std {2:.2g}'
+                      .format(i, rewards.mean(), rewards.std()))
 
         render(sess, vero, env)
         
