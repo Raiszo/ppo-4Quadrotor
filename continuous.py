@@ -48,7 +48,7 @@ def main():
             rewards = np.array(seg["ep_rets"])
 
             if i % 10 or i == num_iterations-1:
-                print('Iteration {0}: with average rewards {1:.3g} and std {2:.2g}'
+                print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
                       .format(i, rewards.mean(), rewards.std()))
 
         render(sess, vero, env)
