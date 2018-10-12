@@ -21,8 +21,7 @@ def main():
     sample_horizon = 2048
     gamma, lam = 0.9, 0.95
 
-    ob_no = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
-    vero = Agent(ob_no, ac_dim, continuous, n_layers=2)
+    vero = Agent(continuous, ob_dim, ac_dim, n_layers=2)
     regina = Sensei(vero, continuous, ob_dim, ac_dim,
                     num_epochs=10, batch_size=64,
                     learning_rate=5e-3, epsilon=0.2)
@@ -47,7 +46,7 @@ def main():
 
             rewards = np.array(seg["ep_rets"])
 
-            if i % 10 or i == num_iterations-1:
+            if i % 10 == 0 or i == num_iterations-1:
                 print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
                       .format(i, rewards.mean(), rewards.std()))
 

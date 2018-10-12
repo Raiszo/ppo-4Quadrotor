@@ -109,7 +109,6 @@ class Sensei():
         
         # Sampled variables
         with tf.variable_scope('placeholders'):
-            self.ob_no = ob_no = self.agent.state
             ac_args = {
                 "shape": [None, ac_dim] if continuous else [None],
                 "name": 'actions',
@@ -144,6 +143,8 @@ class Sensei():
         grads, _ = tf.clip_by_global_norm(grads, gradient_clip)
         grads_and_vars = list(zip(grads, agent.tvars))
         self.train_op = optimizer.apply_gradients(grads_and_vars)
+        # optimizer = tf.train.AdamOptimizer(learning_rate)
+        # self.train_op = optimizer.minimize(self.loss)
 
     def train_samples(self, sess, obs, acs, advs, val):
         batch_size = self.batch_size
@@ -156,8 +157,8 @@ class Sensei():
                 idx = train_indicies[start_idx:start_idx+batch_size]
 
                 feed_dict = {
+                    self.agent.state: obs[idx, :],
                     self.ac_na: acs[idx, :],
-                    self.ob_no: obs[idx, :],
                     self.adv_n: advs[idx],
                     self.t_val: val[idx]
                 }

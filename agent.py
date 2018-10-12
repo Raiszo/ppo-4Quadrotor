@@ -25,14 +25,14 @@ def get_dist(logits, continuous, scope):
 
 
 class Agent:
-    def __init__(self, state_placeholder, action_dim, continuous, n_layers):
+    def __init__(self, continuous, ob_dim, action_dim, n_layers):
         self.continuous = continuous
-        self.state = state_placeholder
+        self.state = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
 
 
-        pi       = build_mlp(2, state_placeholder, action_dim, 'policy')
-        old_pi   = build_mlp(2, state_placeholder, action_dim, 'old_policy')
-        vpred    = build_mlp(2, state_placeholder, 1, 'vale_pred')
+        pi       = build_mlp(2, self.state, action_dim, 'policy')
+        old_pi   = build_mlp(2, self.state, action_dim, 'old_policy')
+        vpred    = build_mlp(2, self.state, 1, 'vale_pred')
 
         dist     = get_dist(pi[0], continuous, 'dist')
         old_dist = get_dist(old_pi[0], continuous, 'old_dist')
