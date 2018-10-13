@@ -19,7 +19,7 @@ def main():
 
     num_iterations = 600
     sample_horizon = 2048
-    gamma, lam = 0.9, 0.95
+    gamma, lam = 0.99, 0.95
 
     vero = Agent(continuous, ob_dim, ac_dim, n_layers=2)
     regina = Sensei(vero, continuous, ob_dim, ac_dim,
@@ -35,14 +35,12 @@ def main():
 
         for i in range(num_iterations):
             seg = generator.__next__()
-            # From the beginning, the old policy is equal to the current policy
-            vero.save_policy(sess)
             add_vtarg_adv(seg, lam, gamma)
 
             adv = seg["adv"]
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
-            regina.train_samples(sess, seg["ob"], seg["ac"], adv, seg["vtarg"])
+            regina.train_samples(sess, seg["ob"], seg["ac"], adv, seg["vtarg"], seg["log_probs"])
 
             rewards = np.array(seg["ep_rets"])
 

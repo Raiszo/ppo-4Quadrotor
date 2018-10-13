@@ -6,8 +6,12 @@ def dist_continuous(logits):
                              initializer=tf.zeros_initializer())
     std = tf.zeros_like(logits) + tf.exp(logstd)
     dist = tf.distributions.Normal(loc=logits, scale=std)
+    sample = dist.sample()
+    
+    log_prob = dist.log_prob(sample)
+    log_prob = tf.squeeze(log_prob, axis=1)
 
-    return dist, dist.sample(), [logstd]
+    return dist, sample, log_prob
 
 def dist_discrete(logits):
     dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
@@ -29,38 +33,18 @@ class Agent:
         self.continuous = continuous
         self.state = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
 
+        with tf.variable_scope('policy'):
+            pi = build_mlp(2, self.state, action_dim)
+            self.dist, self.sample, self.log_prob = dist_continuous(pi)
 
-        pi       = build_mlp(2, self.state, action_dim, 'policy')
-        old_pi   = build_mlp(2, self.state, action_dim, 'old_policy')
-        vpred    = build_mlp(2, self.state, 1, 'vale_pred')
-
-        dist     = get_dist(pi[0], continuous, 'dist')
-        old_dist = get_dist(old_pi[0], continuous, 'old_dist')
-
-        self.pi = pi[0]
-        self.old_pi = old_pi[0]
-        self.vpred = tf.squeeze(vpred[0], axis=1)
-        
-        self.dist = dist[0]
-        self.old_dist = old_dist[0]
-        self.sample_action = dist[1]
-        
-
-        self.tvars = pi[1] + vpred[1] + dist[2]
+        with tf.variable_scope('v_pred'):
+            vpred = build_mlp(2, self.state, 1)
+            self.vpred = tf.squeeze(vpred, axis=1)
 
 
-        with tf.variable_scope('assign_op'):
-            self.assign_ops = []
-            for v_old, v in zip(old_pi[1], pi[1]):
-                self.assign_ops.append(tf.assign(v_old, v))
-
-        
     def act(self, sess, obs):
-        ac, v = sess.run([self.sample_action, self.vpred], feed_dict={self.state: obs[None]})
-        return(ac[0], v[0]) if self.continuous else (ac[0][0], v[0][0])
-
-    def save_policy(self, sess):
-        return sess.run(self.assign_ops)
+        ac, v, lp = sess.run([self.sample, self.vpred, self.log_prob], feed_dict={self.state: obs[None]})
+        return(ac[0], v[0], lp[0]) if self.continuous else (ac[0][0], v[0][0])
 
 # class Random_policy:
 #     def __init__(self, env):
