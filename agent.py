@@ -21,13 +21,6 @@ def dist_discrete(logits):
 
     return dist, sample, []
 
-def get_dist(logits, continuous, scope):
-    with tf.variable_scope(scope):
-        dist = dist_continuous(logits) if continuous else dist_discrete(logits)
-
-    return dist
-
-
 class Agent:
     def __init__(self, continuous, ob_dim, action_dim, n_layers):
         self.continuous = continuous
@@ -45,11 +38,4 @@ class Agent:
     def act(self, sess, obs):
         ac, v, lp = sess.run([self.sample, self.vpred, self.log_prob], feed_dict={self.state: obs[None]})
         return(ac[0], v[0], lp[0]) if self.continuous else (ac[0][0], v[0][0])
-
-# class Random_policy:
-#     def __init__(self, env):
-#         self.action = env.action_space.sample
-
-#     def act(self):
-#         return self.action(), np.random.randn()
 

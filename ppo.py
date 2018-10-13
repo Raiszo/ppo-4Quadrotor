@@ -33,7 +33,7 @@ def rollouts_generator(sess, agent, env, horizon, ep_len=None):
         # prevac = ac
         # ac, vpred = pi.act(ob)
         
-        ac, vpred, log_p = agent.act(sess, ob)
+        ac, vpred, log_prob = agent.act(sess, ob)
         """
         Need next_vpred if the batch ends in the middle of an episode, then we need to append
         that value to vpreds to calculate the target Value using TD => V = r + gamma*V_{t+1}
@@ -51,7 +51,7 @@ def rollouts_generator(sess, agent, env, horizon, ep_len=None):
         obs[i] = ob
         acs[i] = ac
         vpreds[i] = vpred
-        log_probs[i] = log_p
+        log_probs[i] = log_prob
         news[i] = new
 
         ob, rew, new, _ = env.step(ac)
@@ -76,7 +76,7 @@ def render(sess, agent, env):
     total_rew = 0
     while not done:
         env.render()
-        ac, v = agent.act(sess, ob)
+        ac, v, _ = agent.act(sess, ob)
 
         ob, rew, done, _ = env.step(ac)
         total_rew += rew
@@ -147,6 +147,8 @@ class Sensei():
         # optimizer = tf.train.AdamOptimizer(learning_rate)
         # self.train_op = optimizer.minimize(self.loss)
 
+        self.variables = [self.train_op, ratio, agent.log_prob, old_l, agent.sample]
+
     def train_samples(self, sess, obs, acs, advs, val, log_probs):
         batch_size = self.batch_size
         size = obs.shape[0]
@@ -165,6 +167,10 @@ class Sensei():
                     self.old_l: log_probs[idx]
                 }
 
-                _loss, _ = sess.run([self.loss, self.train_op], feed_dict)
+                stuff = sess.run(self.variables, feed_dict)
+                print(stuff[1])
+                print(stuff[2])
+                print(stuff[3])
+                print(stuff[4])
 
         
