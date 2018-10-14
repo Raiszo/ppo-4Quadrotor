@@ -9,17 +9,17 @@ def dist_continuous(logits):
     sample = dist.sample()
     
     log_prob = dist.log_prob(sample)
-    log_prob = tf.squeeze(log_prob, axis=1)
+    # log_prob = tf.squeeze(log_prob, axis=1)
 
     return dist, sample, log_prob
 
-def dist_discrete(logits):
-    dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
+# def dist_discrete(logits):
+#     dist = tf.distributions.Multinomial(total_count=1.0, logits=logits)
 
-    sample = dist.sample()
-    sample = tf.argmax(sample, axis=1)
+#     sample = dist.sample()
+#     sample = tf.argmax(sample, axis=1)
 
-    return dist, sample, []
+#     return dist, sample, []
 
 class Agent:
     def __init__(self, continuous, ob_dim, action_dim, n_layers):
@@ -27,7 +27,7 @@ class Agent:
         self.state = tf.placeholder(shape=[None, ob_dim], name="observations", dtype=tf.float32)
 
         with tf.variable_scope('policy'):
-            pi = build_mlp(2, self.state, action_dim)
+            self.pi = pi = build_mlp(2, self.state, action_dim)
             self.dist, self.sample, self.log_prob = dist_continuous(pi)
 
         with tf.variable_scope('v_pred'):

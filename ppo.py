@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def rollouts_generator(sess, agent, env, horizon, ep_len=None):
+def rollouts_generator(sess, agent, env, horizon):
     """
     Generator function
     This function will continue generating
@@ -23,8 +23,8 @@ def rollouts_generator(sess, agent, env, horizon, ep_len=None):
 
     obs = np.array([ob for _ in range(horizon)])
     acs = np.array([ac for _ in range(horizon)])
+    log_probs = np.array([ac for _ in range(horizon)])
     vpreds = np.zeros(horizon, 'float32')
-    log_probs = np.zeros(horizon, 'float32')
 
     news = np.zeros(horizon, 'int32')
     rews = np.zeros(horizon, 'float32')
@@ -45,6 +45,8 @@ def rollouts_generator(sess, agent, env, horizon, ep_len=None):
                     "vpred": vpreds, "next_vpred": vpred*(1-new),
                     "ep_rets" : ep_rets, "ep_lens" : ep_lens,
                     "log_probs": log_probs }
+            ep_rets = []
+            ep_lens = []
         
         i = t % horizon
 
@@ -60,7 +62,8 @@ def rollouts_generator(sess, agent, env, horizon, ep_len=None):
         cur_ep_ret += rew
         cur_ep_len += 1
 
-        if new or (ep_len and i > ep_len):
+        # if new or (ep_len and i > ep_len):
+        if new:
             ep_rets.append(cur_ep_ret)
             ep_lens.append(cur_ep_len)
             cur_ep_ret = 0
@@ -114,16 +117,16 @@ class Sensei():
         with tf.variable_scope('placeholders'):
             ac_args = {
                 "shape": [None, ac_dim] if continuous else [None],
-                "name": 'actions',
                 "dtype": tf.float32 if continuous else tf.int32
             }
-            self.ac_na = ac_na = tf.placeholder(**ac_args)
+            self.ac_na = ac_na = tf.placeholder(name='actions', **ac_args)
+            self.log_p = log_p = tf.placeholder(name='old_log_probs', **ac_args)
             self.adv_n = adv_n = tf.placeholder(shape=[None], name='advantages', dtype=tf.float32)
             self.t_val = t_val = tf.placeholder(shape=[None], name='target_value', dtype=tf.float32)
-            self.old_l = old_l = tf.placeholder(shape=[None], name='old_log_probs', dtype=tf.float32)
+
 
         with tf.variable_scope('loss/surrogate'):
-            ratio = tf.exp(agent.log_prob - old_l)
+            ratio = tf.exp(agent.dist.log_prob(ac_na) - log_p)
             clipped_ratio = tf.clip_by_value(ratio, 1.0 - epsilon, 1.0 + epsilon)
 
             surrogate_min = tf.minimum(ratio*adv_n, clipped_ratio*adv_n)
@@ -147,7 +150,8 @@ class Sensei():
         # optimizer = tf.train.AdamOptimizer(learning_rate)
         # self.train_op = optimizer.minimize(self.loss)
 
-        self.variables = [self.train_op, ratio, agent.log_prob, old_l, agent.sample]
+        # self.variables = [self.train_op, ratio, clipped_ratio, log_p, agent.dist.log_prob(ac_na)]
+        self.variables = [self.train_op]
 
     def train_samples(self, sess, obs, acs, advs, val, log_probs):
         batch_size = self.batch_size
@@ -162,15 +166,18 @@ class Sensei():
                 feed_dict = {
                     self.agent.state: obs[idx, :],
                     self.ac_na: acs[idx, :],
+                    self.log_p: log_probs[idx, :],
                     self.adv_n: advs[idx],
                     self.t_val: val[idx],
-                    self.old_l: log_probs[idx]
                 }
 
                 stuff = sess.run(self.variables, feed_dict)
-                print(stuff[1])
-                print(stuff[2])
-                print(stuff[3])
-                print(stuff[4])
+        #         print(stuff[1])
+        #         print(stuff[2])
+        #         print(stuff[3])
+        #         print(stuff[4])
+        #         print('end batch')
+        #     print('end epoch')
+        # print('end ite')
 
         
