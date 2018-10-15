@@ -121,7 +121,7 @@ class Sensei():
             }
             self.ac_na = ac_na = tf.placeholder(name='actions', **ac_args)
             self.log_p = log_p = tf.placeholder(name='old_log_probs', **ac_args)
-            self.adv_n = adv_n = tf.placeholder(shape=[None], name='advantages', dtype=tf.float32)
+            self.adv_n = adv_n = tf.placeholder(shape=[None, 1], name='advantages', dtype=tf.float32)
             self.t_val = t_val = tf.placeholder(shape=[None], name='target_value', dtype=tf.float32)
 
 
@@ -172,10 +172,11 @@ class Sensei():
                 }
 
                 stuff = sess.run(self.variables, feed_dict)
-        #         print(stuff[1])
-        #         print(stuff[2])
-        #         print(stuff[3])
-        #         print(stuff[4])
+                # print(stuff)
+                # print(stuff[1])
+                # print(stuff[2])
+                # print(stuff[3])
+                # print(stuff[4])
         #         print('end batch')
         #     print('end epoch')
         # print('end ite')

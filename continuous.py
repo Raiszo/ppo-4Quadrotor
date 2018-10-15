@@ -3,14 +3,19 @@ import numpy as np
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
 import tensorflow as tf
+import gym_pendrogone
 
 tf.set_random_seed(0)
 
 two_pi = np.sqrt(0.5 / np.pi)
 
+# def experiment(env_name, num_iterations, sample_horizon,
+#                gamma, lam, learning_rate, epsilon, batch_size):
+    
+
 def main():
     # env = gym.make('MountainCarContinuous-v0')
-    env = gym.make('Pendulum-v0')
+    env = gym.make('Pendrogone-v0')
     # env = gym.make('CartPole-v1')
 
     continuous = isinstance(env.action_space, gym.spaces.Box)
@@ -19,14 +24,14 @@ def main():
 
     num_iterations = 400
     sample_horizon = 2048
-    # num_iterations = 2
+    # num_iterations = 1
     # sample_horizon = 5
     gamma, lam = 0.99, 0.95
 
     vero = Agent(continuous, ob_dim, ac_dim, n_layers=2)
     regina = Sensei(vero, continuous, ob_dim, ac_dim,
                     num_epochs=10, batch_size=64,
-                    # num_epochs=2, batch_size=3,
+                    # num_epochs=1, batch_size=5,
                     learning_rate=5e-3, epsilon=0.2)
 
     init = tf.global_variables_initializer()
@@ -42,6 +47,7 @@ def main():
 
             adv = seg["adv"]
             adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+            adv = adv[:, None]
 
             regina.train_samples(sess, seg["ob"], seg["ac"], adv, seg["vtarg"], seg["log_probs"])
 
