@@ -4,13 +4,20 @@ from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
 import tensorflow as tf
 import gym_pendrogone
+import logz
 
 tf.set_random_seed(0)
 
 two_pi = np.sqrt(0.5 / np.pi)
 
-# def experiment(env_name, num_iterations, sample_horizon,
-#                gamma, lam, learning_rate, epsilon, batch_size):
+def experiment(log_dir, exp_name, env_name, num_iterations, sample_horizon,
+               gamma, lam, learning_rate, epsilon, batch_size):
+    env = gym.make(env_name)
+
+    logger = logz
+    logger.configure_output_dir(log_dir)
+
+    
     
 
 def main():
