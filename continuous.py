@@ -1,10 +1,12 @@
-import gym, math
+import gym
+import os, math, time, inspect
 import numpy as np
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
 import tensorflow as tf
-import gym_pendrogone
-import Logger from logger_z
+# import gym_pendrogone
+from logger import Logger as Logz
+
 
 tf.set_random_seed(0)
 
@@ -12,23 +14,26 @@ two_pi = np.sqrt(0.5 / np.pi)
 
 def experiment(log_dir, exp_name, env_name, num_iterations, sample_horizon,
                gamma, lam, learning_rate, epsilon, epochs, batch_size):
+
     env = gym.make(env_name)
     continuous = isinstance(env.action_space, gym.spaces.Box)
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
 
-    
+    experiment_dir = exp_name + '_' + env_name + '_' + time.strftime("%d-%m-%Y_%H-%M-%S")
+    experiment_dir = os.path.join(log_dir, experiment_dir)
     ### Logger configuration
-    logger = logz(log_dir)
-    args = inspect.getargspec(self.__init__)[0]
+    logger = Logz(experiment_dir)
+    args = inspect.getargspec(experiment)[0]
     locals_ = locals()
     params = {k: locals_[k] if k in locals_ else None for k in args}
     logger.save_params(params)
+    
 
 
     vero = Agent(continuous, ob_dim, ac_dim, n_layers=2)
     regina = Sensei(vero, continuous, ob_dim, ac_dim,
-                    num_epochs, batch_size,
+                    epochs, batch_size,
                     # num_epochs=1, batch_size=5,
                     learning_rate, epsilon)
 
@@ -63,8 +68,10 @@ def experiment(log_dir, exp_name, env_name, num_iterations, sample_horizon,
         render(sess, vero, env)
     
 def main():
-    experiment('experimentito_01', 'experimentito', 'CartPole-v1', num_iterations=1, sample_horizon=5,
-               gamma=0.99, lam=0.95, learning_rate=5e-3, epsilon=0.2, epochs=1, batch_size=5)
+    if not(os.path.exists('experiments')):
+        os.makedirs('experiments')
+    experiment('experiments', 'PPO', 'Pendulum-v0', num_iterations=400, sample_horizon=2048,
+               gamma=0.99, lam=0.95, learning_rate=5e-3, epsilon=0.2, epochs=10, batch_size=64)
     
     
 

@@ -31,8 +31,17 @@ color2num = dict(
     crimson=38
 )
 
+def colorize(string, color, bold=False, highlight=False):
+    attr = []
+    num = color2num[color]
+    if highlight: num += 10
+    attr.append(str(num))
+    if bold: attr.append('1')
+    return '\x1b[%sm%s\x1b[0m' % (';'.join(attr), string)
+
 class Logger:
     def __init__(self, output_dir):
+        print(output_dir)
         assert not osp.exists(output_dir), "Log dir %s already exists! Delete it first or use a different dir"%output_dir
 
         self.output_dir = output_dir
