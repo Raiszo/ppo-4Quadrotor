@@ -1,0 +1,8 @@
+numpy==1.14.5
+gym
+tensorflow
+scipy
+matplotlib
+ipython
+jupyter
+seaborn
