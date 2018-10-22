@@ -41,7 +41,7 @@ def colorize(string, color, bold=False, highlight=False):
 
 class Logger:
     def __init__(self, output_dir):
-        print(output_dir)
+        # print(output_dir)
         assert not osp.exists(output_dir), "Log dir %s already exists! Delete it first or use a different dir"%output_dir
 
         self.output_dir = output_dir
@@ -56,8 +56,9 @@ class Logger:
         atexit.register(self.output_file.close)
         print(colorize("Logging data to %s"%self.output_file.name, 'green', bold=True))
 
-    def save_params(self, params):
-        with open(osp.join(self.output_dir, "params.json"), 'w') as out:
+    @staticmethod
+    def save_params(exp_dir, params):
+        with open(osp.join(exp_dir, "params.json"), 'w') as out:
             out.write(json.dumps(params, separators=(',\n','\t:\t'), sort_keys=True))
 
     def log_tabular(self, key, val):
@@ -69,8 +70,8 @@ class Logger:
             self.log_headers.append(key)
         else:
             assert key in self.log_headers, "Trying to introduce a new key %s that you didn't include in the first iteration"%key
-            assert key not in self.log_current_row, "You already set %s this iteration. Maybe you forgot to call dump_tabular()"%key
-            self.log_current_row[key] = val
+        assert key not in self.log_current_row, "You already set %s this iteration. Maybe you forgot to call dump_tabular()"%key
+        self.log_current_row[key] = val
 
     # def dump_tabular(print_console):
     def dump_tabular(self):
