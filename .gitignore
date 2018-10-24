@@ -1,6 +1,9 @@
 # experiments data
 /experiments/
 
+# Macosx files
+.DS_Store
+
 # emacs files
 *~
 \#*\#

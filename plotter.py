@@ -12,18 +12,16 @@ Suppose you ran an experiment with name 'test', and you ran 'test' for 10
 random seeds. The runner code stored it in the directory structure
     data
     L test_EnvName_DateTime
+      L params.json
       L  0
         L log.txt
-        L params.json
       L  1
         L log.txt
-        L params.json
        .
        .
        .
       L  9
         L log.txt
-        L params.json
 To plot learning curves from the experiment, averaged over all random
 seeds, call
     python plot.py data/test_EnvName_DateTime --value AverageReturn
