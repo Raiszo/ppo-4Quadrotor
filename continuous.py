@@ -8,6 +8,7 @@ from agent import Agent
 import tensorflow as tf
 # import gym_pendrogone
 from logger import Logger as Logz
+import plotter
 
 def experiment(**args):
     initial_seed = 0
@@ -42,6 +43,7 @@ def experiment(**args):
     for i in processes:
         p.join()
     print('finished trainning :3')
+    return experiment_dir
     
     
 
@@ -104,13 +106,15 @@ def main():
         num_iterations=400,
         sample_horizon=2048,
         # Learning hyperparameters
-        epochs=10, batch_size=64, learning_rate=5e-3,
+        epochs=10, batch_size=64, learning_rate=3e-4,
         # GAE params
         gamma=0.99, lam=0.95,
         # PPO specific hyperparameter, not gonna change this :v
         epsilon=0.2,
     )
-    experiment(**experiment_params)
+    exp_dir = experiment(**experiment_params)
+    data = plotter.get_datasets(exp_dir)
+    plotter.plot_data(data, os.path.join(exp_dir, 'plot4this.png'))
     
     
 if __name__ == '__main__':

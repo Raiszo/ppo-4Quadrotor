@@ -85,41 +85,41 @@ def get_datasets(fpath, condition=None):
 
     return datasets
             
-# def main():
-#     fpath = 'experiments/PPO-00_Pendulum-v0_22-10-2018_01-50-40'
-#     data = get_datasets(fpath)
-#     plot_data(data, path.join(fpath, 'plotcito.png'))
-
-
-
 def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('logdir', nargs='*')
-    parser.add_argument('--legend', nargs='*')
-    parser.add_argument('--value', default='AverageReturn', nargs='*')
-    args = parser.parse_args()
+    fpath = 'experiments/PPO-00_Pendulum-v0_24-10-2018_20-44-54'
+    data = get_datasets(fpath)
+    plot_data(data, path.join(fpath, 'plot4this.png'))
 
-    use_legend = False
-    if args.legend is not None:
-        assert len(args.legend) == len(args.logdir), \
-            "Must give a legend title for each set of experiments."
-        use_legend = True
+
+
+# def main():
+#     import argparse
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('logdir', nargs='*')
+#     parser.add_argument('--legend', nargs='*')
+#     parser.add_argument('--value', default='AverageReturn', nargs='*')
+#     args = parser.parse_args()
+
+#     use_legend = False
+#     if args.legend is not None:
+#         assert len(args.legend) == len(args.logdir), \
+#             "Must give a legend title for each set of experiments."
+#         use_legend = True
         
-    data = []
-    if use_legend:
-        for logdir, legend_title in zip(args.logdir, args.legend):
-            data += get_datasets(logdir, legend_title)
-    else:
-        for logdir in args.logdir:
-            data += get_datasets(logdir)
+#     data = []
+#     if use_legend:
+#         for logdir, legend_title in zip(args.logdir, args.legend):
+#             data += get_datasets(logdir, legend_title)
+#     else:
+#         for logdir in args.logdir:
+#             data += get_datasets(logdir)
 
-    if isinstance(args.value, list):
-        values = args.value
-    else:
-        values = [args.value]
-    for value in values:
-        plot_data(data, path.join(logdir, 'plot4this.png'), value=value)
+#     if isinstance(args.value, list):
+#         values = args.value
+#     else:
+#         values = [args.value]
+#     for value in values:
+#         plot_data(data, path.join(logdir, 'plot4this.png'), value=value)
 
 if __name__ == "__main__":
     main()

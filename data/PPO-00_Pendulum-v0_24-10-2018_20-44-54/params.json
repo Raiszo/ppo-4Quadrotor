@@ -1,0 +1,10 @@
+{"batch_size"	:	64,
+"env_name"	:	"Pendulum-v0",
+"epochs"	:	10,
+"epsilon"	:	0.2,
+"exp_name"	:	"PPO-00",
+"gamma"	:	0.99,
+"lam"	:	0.95,
+"learning_rate"	:	0.0003,
+"num_iterations"	:	400,
+"sample_horizon"	:	2048}
