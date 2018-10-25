@@ -1,3 +1,7 @@
+import sys
+import matplotlib
+if sys.platform == 'darwin':
+    matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -50,15 +54,19 @@ def plot_data(data, plot_name, value="AverageReturn"):
 
 
 def get_datasets(fpath, condition=None):
+    params_path = path.join(fpath, 'params.json')
+    assert path.exists(params_path), "params.json must exist at the root of the experiment folder"
+
+    with open(params_path) as f:
+        params= json.load(f)
+        
+    exp_name = params['exp_name']
+
     unit = 0
     datasets = []
     for root, dir, files in os.walk(fpath):
         if 'log.txt' in files:
-            param_path = open(os.path.join(root,'params.json'))
-            params = json.load(param_path)
-            exp_name = params['exp_name']
-            
-            log_path = os.path.join(root,'log.txt')
+            log_path = path.join(root,'log.txt')
             experiment_data = pd.read_table(log_path)
 
             experiment_data.insert(
@@ -76,6 +84,12 @@ def get_datasets(fpath, condition=None):
             unit += 1
 
     return datasets
+            
+# def main():
+#     fpath = 'experiments/PPO-00_Pendulum-v0_22-10-2018_01-50-40'
+#     data = get_datasets(fpath)
+#     plot_data(data, path.join(fpath, 'plotcito.png'))
+
 
 
 def main():
