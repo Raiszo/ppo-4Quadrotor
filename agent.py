@@ -39,3 +39,10 @@ class Agent:
         ac, v, lp = sess.run([self.sample, self.vpred, self.log_prob], feed_dict={self.state: obs[None]})
         return(ac[0], v[0], lp[0]) if self.continuous else (ac[0][0], v[0][0])
 
+    def act_deterministic(self, sess, obs):
+        """
+        Do not take the action stocastically, just use the logit
+        """
+        ac = sess.run(self.pi, feed_dict={self.state: obs[None]})
+
+        return ac[0] if self.continuous else ac[0][0]

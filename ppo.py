@@ -79,7 +79,7 @@ def render(sess, agent, env):
     total_rew = 0
     while not done:
         env.render()
-        ac, v, _ = agent.act(sess, ob)
+        ac = agent.act_deterministic(sess, ob)
 
         ob, rew, done, _ = env.step(ac)
         total_rew += rew
