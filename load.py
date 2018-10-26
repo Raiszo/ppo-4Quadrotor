@@ -8,8 +8,8 @@ from os import path as path
 
 def load(exp_name, env_name, num_iterations, sample_horizon,
          gamma, lam, learning_rate, epsilon, epochs, batch_size):
-    exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_18-57-23'
-    ckpt_path = path.join(exp_dir, '0/model100.ckpt')
+    exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
+    ckpt_path = path.join(exp_dir, '0/model249.ckpt')
 
     print(ckpt_path)
 
