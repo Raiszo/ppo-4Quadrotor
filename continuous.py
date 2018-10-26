@@ -10,9 +10,9 @@ import tensorflow as tf
 from logger import Logger as Logz
 import plotter
 
-def experiment(**args):
+def experiment(n_experiments, **args):
     initial_seed = 0
-    n_experiments = 4
+    # n_experiments = 4
     # print(args)
     
     if not(os.path.exists('experiments')):
@@ -64,6 +64,8 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
                     learning_rate, epsilon)
 
     init = tf.global_variables_initializer()
+    saver = tf.train.Saver()
+    save_path = log_dir
     with get_session() as sess:
         sess.run(init)
         
@@ -93,8 +95,9 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
                 # print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
                 #       .format(i, mean, std))
 
-            if i % 100 == 0 or i == num_iterations-1:
-                print('iteration: %d'%i)
+            if i % 50 == 0 or i == num_iterations-1:
+                saver.save(sess=sess, save_path=save_path+"/model%d"%i+".ckpt")
+                print('saving on iteration: %d'%i)
 
         # render(sess, vero, env)
 
@@ -103,7 +106,7 @@ def main():
     experiment_params = dict(
         exp_name='PPO-00',
         env_name='Pendulum-v0',
-        num_iterations=400,
+        num_iterations=250,
         sample_horizon=2048,
         # Learning hyperparameters
         epochs=10, batch_size=64, learning_rate=3e-4,
@@ -112,7 +115,7 @@ def main():
         # PPO specific hyperparameter, not gonna change this :v
         epsilon=0.2,
     )
-    exp_dir = experiment(**experiment_params)
+    exp_dir = experiment(n_experiments=6, **experiment_params)
     data = plotter.get_datasets(exp_dir)
     plotter.plot_data(data, os.path.join(exp_dir, 'plot4this.png'))
     
