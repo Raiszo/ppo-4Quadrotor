@@ -104,8 +104,9 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
 def main():
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='PPO-00',
-        env_name='Pendulum-v0',
+        exp_name='PPO-01',
+        # env_name='Pendulum-v0',
+        env_name='LunarLanderContinuous-v2',
         num_iterations=250,
         sample_horizon=2048,
         # Learning hyperparameters
@@ -115,7 +116,7 @@ def main():
         # PPO specific hyperparameter, not gonna change this :v
         epsilon=0.2,
     )
-    exp_dir = experiment(n_experiments=6, **experiment_params)
+    exp_dir = experiment(n_experiments=1, **experiment_params)
     data = plotter.get_datasets(exp_dir)
     plotter.plot_data(data, os.path.join(exp_dir, 'plot4this.png'))
     
