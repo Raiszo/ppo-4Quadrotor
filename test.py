@@ -2,13 +2,13 @@ import gym
 import tensorflow as tf
 import numpy as np
 from agent import Agent
-from ppo import render, rollouts_generator, Sensei
+from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 
-num_iterations = 2
-sample_horizon = 10
+num_iterations = 250
+sample_horizon = 2048
 # Learning hyperparameters
-epochs=2
-batch_size=2
+epochs=10
+batch_size=64
 learning_rate=3e-4
 # GAE params
 gamma=0.99
@@ -20,7 +20,7 @@ def main():
     env = gym.make('LunarLanderContinuous-v2')
     
     continuous = isinstance(env.action_space, gym.spaces.Box)
-    print(continuous)
+    # print(continuous)
 
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n

@@ -1,20 +1,22 @@
 import gym
-import os, math, time, inspect
+import json
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
 import tensorflow as tf
 from os import path as path
 # import gym_pendrogone
 
-def load(exp_name, env_name, num_iterations, sample_horizon,
-         gamma, lam, learning_rate, epsilon, epochs, batch_size):
-    exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
-    ckpt_path = path.join(exp_dir, '0/model249.ckpt')
+def load(exp_dir):
+    # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
+    ckpt_path = path.join(exp_dir, '10/model200.ckpt')
 
-    print(ckpt_path)
+    params_path = path.join(exp_dir, 'params.json')
+    assert path.exists(params_path), "params.json must exist at the root of the experiment folder >:v"
 
+    with open(params_path) as f:
+        params= json.load(f)
     
-    env = gym.make(env_name)
+    env = gym.make(params["env_name"])
     continuous = isinstance(env.action_space, gym.spaces.Box)
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
@@ -32,21 +34,14 @@ def load(exp_name, env_name, num_iterations, sample_horizon,
 
 
 def main():
-    args = {
-        "batch_size"    :       64,
-        "env_name"      :       "Pendulum-v0",
-        "epochs"        :       10,
-        "epsilon"       :       0.2,
-        "exp_name"      :       "PPO-00",
-        "gamma" :       0.99,
-        "lam"   :       0.95,
-        "learning_rate" :       0.0003,
-        "num_iterations"        :       150,
-        "sample_horizon"        :       2048
-    }
+    import argparse
+    parser = argparse.ArgumentParser(description='Render trainned agents in their environments')
+    parser.add_argument('logdir', help='relative path to experiment directory')
+    # parser.add_argument('iteration', help='iteration number')
+    args = parser.parse_args()
 
-    load(**args)
-
+    load(args.logdir)
+    
     
 if __name__ == '__main__':
     main()
