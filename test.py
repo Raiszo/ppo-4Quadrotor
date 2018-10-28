@@ -1,10 +1,11 @@
 import gym
+import gym_pendrogone
 import tensorflow as tf
 import numpy as np
 from agent import Agent
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 
-num_iterations = 250
+num_iterations = 100
 sample_horizon = 2048
 # Learning hyperparameters
 epochs=10
@@ -16,14 +17,19 @@ lam=0.95
 # PPO specific hyperparameter, not gonna change this :v
 epsilon=0.2
 
+
 def main():
-    env = gym.make('LunarLanderContinuous-v2')
+    env = gym.make('PendrogoneZero-v0')
     
     continuous = isinstance(env.action_space, gym.spaces.Box)
     # print(continuous)
 
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
+
+    print('ob_dim', ob_dim)
+    print('ac_dim', ac_dim)
+    
 
     veronika = Agent(continuous, ob_dim, ac_dim, n_layers=2)
     regina = Sensei(veronika, continuous, ob_dim, ac_dim,
@@ -38,6 +44,7 @@ def main():
 
         for i in range(num_iterations):
             seg = generator.__next__()
+            # print(seg["rew"])
             add_vtarg_adv(seg, lam, gamma)
 
             adv = seg["adv"]
@@ -53,7 +60,7 @@ def main():
                 print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
                       .format(i, mean, std))
 
-        render(sess, veronika, env)
+                render(sess, veronika, env)
 
 if __name__ == '__main__':
     main()

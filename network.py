@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def build_mlp(n_layers, input_placeholder, output_size, size=64):
+def build_mlp(n_layers, input_placeholder, output_size, size=32):
 
     y = input_placeholder
     for i in range(n_layers):
