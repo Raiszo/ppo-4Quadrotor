@@ -1,4 +1,5 @@
 import gym
+import gym_pendrogone
 import os, math, time, inspect
 from multiprocessing import Process
 import numpy as np
@@ -104,9 +105,9 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
 def main():
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='PPO-01',
+        exp_name='PPO-02',
         # env_name='Pendulum-v0',
-        env_name='LunarLanderContinuous-v2',
+        env_name='PendrogoneZero-v0',
         num_iterations=250,
         sample_horizon=2048,
         # Learning hyperparameters

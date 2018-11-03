@@ -5,7 +5,7 @@ import numpy as np
 from agent import Agent
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 
-num_iterations = 100
+num_iterations = 600
 sample_horizon = 2048
 # Learning hyperparameters
 epochs=10
@@ -27,8 +27,8 @@ def main():
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
 
-    print('ob_dim', ob_dim)
-    print('ac_dim', ac_dim)
+    # print('ob_dim', ob_dim)
+    # print('ac_dim', ac_dim)
     
 
     veronika = Agent(continuous, ob_dim, ac_dim, n_layers=2)

@@ -1,4 +1,5 @@
 import gym
+import gym_pendrogone
 import json
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
@@ -8,7 +9,7 @@ from os import path as path
 
 def load(exp_dir):
     # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
-    ckpt_path = path.join(exp_dir, '10/model200.ckpt')
+    ckpt_path = path.join(exp_dir, '0/model249.ckpt')
 
     params_path = path.join(exp_dir, 'params.json')
     assert path.exists(params_path), "params.json must exist at the root of the experiment folder >:v"
