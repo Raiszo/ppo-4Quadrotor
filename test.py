@@ -5,7 +5,10 @@ import numpy as np
 from agent import Agent
 from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 
-num_iterations = 600
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+
+num_iterations = 100
 sample_horizon = 2048
 # Learning hyperparameters
 epochs=10
@@ -56,9 +59,10 @@ def main():
             rewards = np.array(seg["ep_rets"])
             
             if i % 10 == 0 or i == num_iterations-1:
-                mean, std = rewards.mean(), rewards.std()
-                print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
-                      .format(i, mean, std))
+                if rewards.shape[0] > 0:
+                    mean, std = rewards.mean(), rewards.std()
+                    print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}, ep_len: {3:5.2f}'
+                          .format(i, mean, std, np.mean(seg["ep_lens"])))
 
                 render(sess, veronika, env)
 

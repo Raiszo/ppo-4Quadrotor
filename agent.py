@@ -3,7 +3,8 @@ from network import build_mlp
 
 def dist_continuous(logits):
     logstd = tf.get_variable(name='logstd', shape=[1, logits.get_shape()[1]],
-                             initializer=tf.zeros_initializer())
+                             initializer=tf.constant_initializer(-0.53))
+                             # initializer=tf.zeros_initializer())
     std = tf.zeros_like(logits) + tf.exp(logstd)
     dist = tf.distributions.Normal(loc=logits, scale=std)
     sample = dist.sample()

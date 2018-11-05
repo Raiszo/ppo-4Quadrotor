@@ -92,6 +92,7 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
                 logger.log_tabular("StdReturn", std)
                 logger.log_tabular("MaxReturn", np.max(rewards))
                 logger.log_tabular("MinReturn", np.min(rewards))
+                logger.log_tabular("Average length", np.mean(seg["ep_lens"]))
                 logger.dump_tabular()
                 # print('Iteration {0:3d}: with average rewards {1:5.3f} and std {2:5.2f}'
                 #       .format(i, mean, std))
@@ -108,7 +109,7 @@ def main():
         exp_name='PPO-02',
         # env_name='Pendulum-v0',
         env_name='PendrogoneZero-v0',
-        num_iterations=250,
+        num_iterations=400,
         sample_horizon=2048,
         # Learning hyperparameters
         epochs=10, batch_size=64, learning_rate=1e-4,
