@@ -8,7 +8,7 @@ from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-num_iterations = 100
+num_iterations = 250
 sample_horizon = 2048
 # Learning hyperparameters
 epochs=10
@@ -22,7 +22,8 @@ epsilon=0.2
 
 
 def main():
-    env = gym.make('PendrogoneZero-v0')
+    # env = gym.make('PendrogoneZero-v0')
+    env = gym.make('DroneZero-v0')
     
     continuous = isinstance(env.action_space, gym.spaces.Box)
     # print(continuous)
@@ -64,7 +65,7 @@ def main():
                     print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}, ep_len: {3:5.2f}'
                           .format(i, mean, std, np.mean(seg["ep_lens"])))
 
-                render(sess, veronika, env)
+        render(sess, veronika, env)
 
 if __name__ == '__main__':
     main()
