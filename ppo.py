@@ -84,9 +84,10 @@ def render(sess, agent, env):
         ac = agent.act_deterministic(sess, ob)
 
         ob, rew, done, _ = env.step(ac)
-        total_rew += rew
+        print(rew)
+        # total_rew += rew
 
-    print('Total reward at testig', total_rew)
+    # print('Total reward at testig', total_rew)
         
 def add_vtarg_adv(seg, lam, gamma):
     T = len(seg["ob"])
