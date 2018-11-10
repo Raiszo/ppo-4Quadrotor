@@ -8,7 +8,7 @@ from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-num_iterations = 250
+num_iterations = 300
 sample_horizon = 2048
 # Learning hyperparameters
 epochs=10
