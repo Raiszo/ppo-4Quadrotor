@@ -31,7 +31,7 @@ def load(exp_dir):
 
     with tf.Session() as sess:
         saver.restore(sess, ckpt_path)
-        render(sess, vero, env)
+        render(vero, env, sess)
 
 
 def main():

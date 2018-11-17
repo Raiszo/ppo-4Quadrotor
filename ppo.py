@@ -74,14 +74,14 @@ def rollouts_generator(sess, agent, env, horizon):
 
         t += 1
 
-def render(sess, agent, env):
+def render(agent, env, sess):
     ob = env.reset()
     done = False
 
     total_rew = 0
     while not done:
         env.render()
-        ac = agent.act_deterministic(sess, ob)
+        ac = agent.act_deterministic(ob, sess)
 
         ob, rew, done, _ = env.step(ac)
         print(rew)

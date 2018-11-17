@@ -36,11 +36,11 @@ class Agent:
             self.vpred = tf.squeeze(vpred, axis=1)
 
 
-    def act(self, sess, obs):
+    def act(self, obs, sess):
         ac, v, lp = sess.run([self.sample, self.vpred, self.log_prob], feed_dict={self.state: obs[None]})
         return(ac[0], v[0], lp[0]) if self.continuous else (ac[0][0], v[0][0])
 
-    def act_deterministic(self, sess, obs):
+    def act_deterministic(self, obs, sess):
         """
         Do not take the action stocastically, just use the logit
         """
