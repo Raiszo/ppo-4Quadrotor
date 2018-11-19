@@ -11,19 +11,19 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 num_iterations = 300
 sample_horizon = 2048
 # Learning hyperparameters
-epochs=10
-batch_size=64
-learning_rate=3e-4
+epochs = 10
+batch_size = 64
+learning_rate = 3e-4
 # GAE params
-gamma=0.99
-lam=0.95
+gamma = 0.99
+lam = 0.95
 # PPO specific hyperparameter, not gonna change this :v
-epsilon=0.2
+epsilon = 0.2
 
 
 def main():
-    # env = gym.make('PendrogoneZero-v0')
-    env = gym.make('DroneZero-v0')
+    env = gym.make('PendrogoneZero-v0')
+    # env = gym.make('DroneZero-v0')
     
     continuous = isinstance(env.action_space, gym.spaces.Box)
     # print(continuous)
@@ -65,7 +65,7 @@ def main():
                     print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}, ep_len: {3:5.2f}'
                           .format(i, mean, std, np.mean(seg["ep_lens"])))
 
-        render(sess, veronika, env)
+                render(veronika, env, sess)
 
 if __name__ == '__main__':
     main()

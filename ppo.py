@@ -33,7 +33,7 @@ def rollouts_generator(sess, agent, env, horizon):
         # prevac = ac
         # ac, vpred = pi.act(ob)
         
-        ac, vpred, log_prob = agent.act(sess, ob)
+        ac, vpred, log_prob = agent.act(ob, sess)
         # print(ac)
         """
         Need next_vpred if the batch ends in the middle of an episode, then we need to append
@@ -58,6 +58,7 @@ def rollouts_generator(sess, agent, env, horizon):
         news[i] = new
 
         ob, rew, new, _ = env.step(ac)
+        # rew = np.sum(rew)
         # print(ob, rew)
 
         rews[i] = rew
@@ -74,7 +75,7 @@ def rollouts_generator(sess, agent, env, horizon):
 
         t += 1
 
-def render(agent, env, sess):
+def render(agent, env, sess=None):
     ob = env.reset()
     done = False
 
@@ -85,9 +86,9 @@ def render(agent, env, sess):
 
         ob, rew, done, _ = env.step(ac)
         print(rew)
-        # total_rew += rew
+        total_rew += np.sum(rew)
 
-    # print('Total reward at testig', total_rew)
+    print('Total reward at testig', total_rew)
         
 def add_vtarg_adv(seg, lam, gamma):
     T = len(seg["ob"])

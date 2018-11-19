@@ -106,9 +106,10 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
 def main():
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='PPO-03',
+        exp_name='06-exponential',
         # env_name='Pendulum-v0',
-        env_name='DroneZero-v0',
+        # env_name='DroneZero-v0',
+        env_name='PendrogoneZero-v0',
         num_iterations=350,
         sample_horizon=2048,
         # Learning hyperparameters
