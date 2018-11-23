@@ -62,10 +62,10 @@ def main():
             if i % 10 == 0 or i == num_iterations-1:
                 if rewards.shape[0] > 0:
                     mean, std = rewards.mean(), rewards.std()
-                    print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}, ep_len: {3:5.2f}'
-                          .format(i, mean, std, np.mean(seg["ep_lens"])))
+                    print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}; ep_len: {3:5.2f}; action: m{1:5.3f}, std{2:5.2f}'
+                          .format( i, mean, std, np.mean(seg["ep_lens"]), np.mean(seg["ac"]), np.std(seg["ac"]) ))
 
-                render(veronika, env, sess)
+        render(veronika, env, sess)
 
 if __name__ == '__main__':
     main()
