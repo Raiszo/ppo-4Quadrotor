@@ -8,11 +8,11 @@ from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-num_iterations = 300
-sample_horizon = 2048
+num_iterations = 1
+sample_horizon = 100
 # Learning hyperparameters
-epochs = 10
-batch_size = 64
+epochs = 1
+batch_size = 10
 learning_rate = 3e-4
 # GAE params
 gamma = 0.99
@@ -62,8 +62,12 @@ def main():
             if i % 10 == 0 or i == num_iterations-1:
                 if rewards.shape[0] > 0:
                     mean, std = rewards.mean(), rewards.std()
-                    print('Iteration {0:3d}: reward:  m{1:5.3f}, std{2:5.2f}; ep_len: {3:5.2f}; action: m{1:5.3f}, std{2:5.2f}'
-                          .format( i, mean, std, np.mean(seg["ep_lens"]), np.mean(seg["ac"]), np.std(seg["ac"]) ))
+                    print(
+                        'Iteration {0:3d}: reward:  m{1:6.3f}, std{2:4.2f}; ep_len: {3:5.2f}; action: m:{4}, std:{5}'
+                        .format( i, mean, std,
+                                 np.mean(seg["ep_lens"]),
+                                 np.mean(seg["ac"], axis=0), np.std(seg["ac"], axis=0) )
+                    )
 
         render(veronika, env, sess)
 
