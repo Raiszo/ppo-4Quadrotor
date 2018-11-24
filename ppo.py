@@ -58,7 +58,8 @@ def rollouts_generator(sess, agent, env, horizon):
         news[i] = new
 
         ob, rew, new, _ = env.step(ac)
-        # rew = np.sum(rew)
+        print(rew)
+        rew = np.sum(rew)
         # print(ob, rew)
 
         rews[i] = rew
