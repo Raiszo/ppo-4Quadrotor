@@ -106,7 +106,7 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
 def main():
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='10-velocity-reward',
+        exp_name='12-faster',
         # env_name='Pendulum-v0',
         # env_name='DroneZero-v0',
         env_name='PendrogoneZero-v0',
