@@ -10,7 +10,7 @@ import cv2
 
 def load(exp_dir, file_name=None):
     # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
-    ckpt_path = path.join(exp_dir, '0/model499.ckpt')
+    ckpt_path = path.join(exp_dir, '0/model799.ckpt')
 
     params_path = path.join(exp_dir, 'params.json')
     assert path.exists(params_path), "params.json must exist at the root of the experiment folder >:v"
@@ -30,14 +30,14 @@ def load(exp_dir, file_name=None):
 
     if file_name:
         fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        fps = 30
-        out = cv2.VideoWriter(file_name, fourcc, 50, (800, 800))
+        fps = 50
+        out = cv2.VideoWriter(file_name, fourcc, fps, (800, 800))
         
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         saver.restore(sess, ckpt_path)
-        render(vero, env, sess, recorder=out)
+        render(vero, env, sess, recorder=out if file_name else None)
 
     if file_name: out.release()
 
