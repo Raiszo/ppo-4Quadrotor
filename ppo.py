@@ -76,13 +76,14 @@ def rollouts_generator(sess, agent, env, horizon):
 
         t += 1
 
-def render(agent, env, sess=None):
+def render(agent, env, sess=None, recorder=None):
     ob = env.reset()
     done = False
 
     total_rew = 0
     while not done:
-        env.render()
+        frame = env.render(mode='rgb_array')
+        if recorder: recorder.write(frame)
         ac = agent.act_deterministic(ob, sess)
 
         ob, rew, done, _ = env.step(ac)

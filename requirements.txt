@@ -6,3 +6,4 @@ matplotlib
 ipython
 jupyter
 seaborn
+opencv-python

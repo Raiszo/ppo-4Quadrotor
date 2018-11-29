@@ -5,9 +5,10 @@ from ppo import rollouts_generator, add_vtarg_adv, render, Sensei
 from agent import Agent
 import tensorflow as tf
 from os import path as path
-# import gym_pendrogone
 
-def load(exp_dir):
+import cv2
+
+def load(exp_dir, file_name=None):
     # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
     ckpt_path = path.join(exp_dir, '0/model499.ckpt')
 
@@ -26,22 +27,30 @@ def load(exp_dir):
     # regina = Sensei(vero, continuous, ob_dim, ac_dim,
     #                 epochs, batch_size,
     #                 learning_rate, epsilon)
-    
+
+    if file_name:
+        fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+        fps = 30
+        out = cv2.VideoWriter(file_name, fourcc, 50, (800, 800))
+        
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         saver.restore(sess, ckpt_path)
-        render(vero, env, sess)
+        render(vero, env, sess, recorder=out)
+
+    if file_name: out.release()
 
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description='Render trainned agents in their environments')
     parser.add_argument('logdir', help='relative path to experiment directory')
+    parser.add_argument('--video', help='filename to save the simulation as video', default=None)
     # parser.add_argument('iteration', help='iteration number')
     args = parser.parse_args()
 
-    load(args.logdir)
+    load(args.logdir, args.video)
     
     
 if __name__ == '__main__':
