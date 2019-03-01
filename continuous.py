@@ -110,7 +110,7 @@ def main():
         # env_name='Pendulum-v0',
         # env_name='DroneZero-v0',
         env_name='PendrogoneZero-v0',
-        num_iterations=600,
+        num_iterations=1200,
         sample_horizon=2048,
         # Learning hyperparameters
         epochs=10, batch_size=64, learning_rate=1e-4,
