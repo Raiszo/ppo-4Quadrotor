@@ -8,7 +8,7 @@ from os import path as path
 
 import cv2
 
-def load(exp_dir, file_name=None):
+def load(exp_dir, file_name, env_name):
     # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
     ckpt_path = path.join(exp_dir, '0/model1199.ckpt')
 
@@ -18,7 +18,7 @@ def load(exp_dir, file_name=None):
     with open(params_path) as f:
         params= json.load(f)
     
-    env = gym.make(params["env_name"])
+    env = gym.make(env_name or params["env_name"])
     continuous = isinstance(env.action_space, gym.spaces.Box)
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0] if continuous else env.action_space.n
@@ -47,10 +47,11 @@ def main():
     parser = argparse.ArgumentParser(description='Render trainned agents in their environments')
     parser.add_argument('logdir', help='relative path to experiment directory')
     parser.add_argument('--video', help='filename to save the simulation as video', default=None)
+    parser.add_argument('--env_name', help='by default uses the one that was trained in', default=None)
     # parser.add_argument('iteration', help='iteration number')
     args = parser.parse_args()
 
-    load(args.logdir, args.video)
+    load(args.logdir, args.video, args.env_name)
     
     
 if __name__ == '__main__':
