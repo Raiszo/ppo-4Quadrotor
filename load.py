@@ -10,7 +10,7 @@ import cv2
 
 def load(exp_dir, file_name, env_name):
     # exp_dir = 'experiments/PPO-00_Pendulum-v0_25-10-2018_20-12-37'
-    ckpt_path = path.join(exp_dir, '0/model1199.ckpt')
+    ckpt_path = path.join(exp_dir, '0/model799.ckpt')
 
     params_path = path.join(exp_dir, 'params.json')
     assert path.exists(params_path), "params.json must exist at the root of the experiment folder >:v"
@@ -47,7 +47,7 @@ def main():
     parser = argparse.ArgumentParser(description='Render trainned agents in their environments')
     parser.add_argument('logdir', help='relative path to experiment directory')
     parser.add_argument('--video', help='filename to save the simulation as video', default=None)
-    parser.add_argument('--env_name', help='by default uses the one that was trained in', default=None)
+    parser.add_argument('--env-name', help='by default uses the one that was trained in', default=None)
     # parser.add_argument('iteration', help='iteration number')
     args = parser.parse_args()
 
