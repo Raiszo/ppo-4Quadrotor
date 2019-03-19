@@ -1,5 +1,6 @@
 import gym
 import gym_pendrogone
+import gym_tidal_turbine
 import os, math, time, inspect
 from multiprocessing import Process
 import numpy as np
@@ -49,7 +50,8 @@ def experiment(n_experiments, **args):
     
 
 def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
-                  gamma, lam, learning_rate, epsilon, epochs, batch_size, seed):
+                  gamma, lam, learning_rate, epsilon, epochs, batch_size,
+                  seed, ckpt_path):
     tf.set_random_seed(seed)
     
     env = gym.make(env_name)
@@ -68,7 +70,10 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
     saver = tf.train.Saver()
     save_path = log_dir
     with get_session() as sess:
-        sess.run(init)
+        if ckpt_path:
+            saver.restore(sess, ckpt_path)
+        else:
+            sess.run(init)
         
         generator = rollouts_generator(sess, vero, env, sample_horizon)
 
@@ -104,13 +109,18 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
         # render(sess, vero, env)
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description='Train it :3')
+    parser.add_argument('--ckpt-path', help='relative path to checkpoint to saved model', default=None)
+    args = parser.parse_args()
+
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='13-better',
+        exp_name='00',
         # env_name='Pendulum-v0',
         # env_name='DroneZero-v0',
-        env_name='PendrogoneZero-v0',
-        num_iterations=1200,
+        env_name='PendrogoneFlagrun-v0',
+        num_iterations=400,
         sample_horizon=2048,
         # Learning hyperparameters
         epochs=10, batch_size=64, learning_rate=1e-4,
@@ -118,6 +128,7 @@ def main():
         gamma=0.99, lam=0.95,
         # PPO specific hyperparameter, not gonna change this :v
         epsilon=0.2,
+        ckpt_path=args.ckpt_path
     )
     exp_dir = experiment(n_experiments=4, **experiment_params)
     data = plotter.get_datasets(exp_dir)
