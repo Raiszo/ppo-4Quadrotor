@@ -1,5 +1,5 @@
 import gym
-import gym_pendrogone
+# import gym_pendrogone
 import gym_tidal_turbine
 import os, math, time, inspect
 from multiprocessing import Process
@@ -31,19 +31,24 @@ def experiment(n_experiments, **args):
     # params = {k: locals_[k] if k in locals_ else None for k in args}
     Logz.save_params(experiment_dir, args)
 
-    processes = []
-    for e in range(n_experiments):
-        seed = initial_seed + 10*e
-        log_dir = os.path.join(experiment_dir,'%d'%seed)
-        def train_func():
-            train_process(log_dir=log_dir, seed=seed, **args)
+    # Just run 1 experiment
+    seed = initial_seed
+    log_dir = os.path.join(experiment_dir,'%d'%seed)
+    train_process(log_dir=log_dir, seed=seed, **args)
 
-        p = Process(target=train_func, args=tuple())
-        p.start()
-        processes.append(p)
+    # processes = []
+    # for e in range(n_experiments):
+    #     seed = initial_seed + 10*e
+    #     log_dir = os.path.join(experiment_dir,'%d'%seed)
+    #     def train_func():
+    #         train_process(log_dir=log_dir, seed=seed, **args)
 
-    for i in processes:
-        p.join()
+    #     p = Process(target=train_func, args=tuple())
+    #     p.start()
+    #     processes.append(p)
+
+    # for i in processes:
+    #     p.join()
     print('finished trainning :3')
     return experiment_dir
     
@@ -67,7 +72,7 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
                     learning_rate, epsilon)
 
     init = tf.global_variables_initializer()
-    saver = tf.train.Saver()
+    saver = tf.train.Saver(max_to_keep=20)
     save_path = log_dir
     with get_session() as sess:
         if ckpt_path:
@@ -90,6 +95,7 @@ def train_process(log_dir, exp_name, env_name, num_iterations, sample_horizon,
             rewards = np.array(seg["ep_rets"])
 
             if i % 10 == 0 or i == num_iterations-1:
+                # print(rewards)
                 mean, std = rewards.mean(), rewards.std()
 
                 logger.log_tabular("Iteration", i)
@@ -116,16 +122,17 @@ def main():
 
     # Leaving everything in a single function for easy later CLI argument parsing
     experiment_params = dict(
-        exp_name='00',
+        exp_name='32-SimpleModel-gainx10-longrun',
         # env_name='Pendulum-v0',
         # env_name='DroneZero-v0',
-        env_name='PendrogoneFlagrun-v0',
-        num_iterations=800,
-        sample_horizon=2048,
+        # env_name='PendrogoneFlagrun-v0',
+        env_name='WindTurbine-v2',
+        num_iterations=600,
+        sample_horizon=8192,
         # Learning hyperparameters
-        epochs=10, batch_size=64, learning_rate=1e-4,
+        epochs=10, batch_size=128, learning_rate=1e-4,
         # GAE params
-        gamma=0.99, lam=0.95,
+        gamma=0.95, lam=0.95,
         # PPO specific hyperparameter, not gonna change this :v
         epsilon=0.2,
         ckpt_path=args.ckpt_path

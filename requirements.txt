@@ -1,9 +1,8 @@
-numpy==1.14.5
+numpy
 gym
 tensorflow
 scipy
 matplotlib
-ipython
 jupyter
 seaborn
 opencv-python

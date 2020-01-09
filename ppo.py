@@ -82,15 +82,17 @@ def render(agent, env, sess=None, recorder=None):
 
     total_rew = 0
     while not done:
-        frame = env.render(mode='rgb_array')
+        # frame = env.render(mode='human')
         if recorder: recorder.write(frame)
         ac = agent.act_deterministic(ob, sess)
 
         ob, rew, done, _ = env.step(ac)
-        print(rew)
+        print(ac, rew)
         total_rew += np.sum(rew)
 
-    print('Total reward at testig', total_rew)
+    env.render()
+
+    # print('Total reward at testig', total_rew)
         
 def add_vtarg_adv(seg, lam, gamma):
     T = len(seg["ob"])
@@ -145,7 +147,7 @@ class Sensei():
         with tf.variable_scope('loss/entropy'):
             self.ent_loss = tf.reduce_mean(agent.dist.entropy())
 
-        self.loss = - self.surrogate + 0.5*self.v_loss - 0.01*self.ent_loss
+        self.loss = - self.surrogate + 0.5*self.v_loss - 0.1*self.ent_loss
 
         gradient_clip = 40
         optimizer = tf.train.AdamOptimizer(learning_rate)
